@@ -2,13 +2,13 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { Menu, X, Zap, ChevronRight, MessageSquare } from "lucide-react";
+import { Menu, X, Zap, ChevronRight, MessageSquare, ArrowRight } from "lucide-react";
 
 const navLinks = [
   { href: "#projects", label: "Projects" },
+  { href: "#approach", label: "Approach" },
   { href: "https://github.com/kristian-enaga", label: "GitHub", external: true },
   { href: "https://www.linkedin.com/in/kristian-jay-e%C3%B1aga-85345741a/", label: "LinkedIn", external: true },
-  { href: "mailto:kchanchan2357@gmail.com", label: "Email" },
 ];
 
 export default function Header() {
@@ -71,6 +71,14 @@ export default function Header() {
               <MessageSquare className="w-4 h-4" aria-hidden="true" />
               <span className="hidden sm:inline">WhatsApp</span>
             </a>
+            <a
+              href="#contact"
+              className="btn-primary focus-ring whitespace-nowrap group"
+              onClick={(e) => { e.preventDefault(); document.querySelector('#contact')?.scrollIntoView({ behavior: 'smooth' }); }}
+            >
+              Let's Work Together
+              <ChevronRight className="w-4 h-4 ml-2 transition-transform duration-500 ease-out group-hover:-translate-y-1 group-hover:rotate-12" aria-hidden="true" />
+            </a>
           </div>
 
           <button
@@ -103,15 +111,24 @@ export default function Header() {
                 {link.label}
               </a>
             ))}
-            <a
-              href="https://wa.me/639510833623"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center justify-center gap-2 px-4 py-3 rounded-full glass border-white/10 text-sm font-medium text-muted hover:text-foreground hover:border-mint/30 transition-all duration-500 ease-out"
-            >
-              <MessageSquare className="w-5 h-5" aria-hidden="true" />
-              WhatsApp: +63 951 083 3623
-            </a>
+            <div className="flex flex-col gap-3 pt-4 border-t border-white/5">
+              <a
+                href="https://wa.me/639510833623"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center justify-center gap-2 px-4 py-3 rounded-full glass border-white/10 text-sm font-medium text-muted hover:text-foreground hover:border-mint/30 transition-all duration-500 ease-out"
+              >
+                <MessageSquare className="w-5 h-5" aria-hidden="true" />
+                WhatsApp: +63 951 083 3623
+              </a>
+              <a
+                href="#contact"
+                className="btn-primary text-center"
+                onClick={() => { setIsMobileMenuOpen(false); document.querySelector('#contact')?.scrollIntoView({ behavior: 'smooth' }); }}
+              >
+                Let's Work Together
+              </a>
+            </div>
           </div>
         </div>
       </div>

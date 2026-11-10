@@ -1,34 +1,49 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { ArrowRight, Play, Github, ExternalLink, CheckCircle, Zap, Shield, Brain, Database, Globe, Terminal, Layers, Cloud, ArrowUpRight, ChevronRight } from "lucide-react";
+import { ArrowRight, Play, CheckCircle } from "lucide-react";
 
-interface Particle {
+interface StreamNode {
   x: number;
   y: number;
+  targetX: number;
+  targetY: number;
   vx: number;
   vy: number;
-  size: number;
+  radius: number;
   opacity: number;
   color: string;
-  trail: { x: number; y: number }[];
+  type: 'lead' | 'process' | 'data' | 'output' | 'flow';
+  pulse: number;
 }
 
-const PHASES = [
-  { id: "ingest", label: "INGEST", desc: "Lead Capture & Webhooks", color: "#06b6d4" },
-  { id: "process", label: "PROCESS", desc: "AI Enrichment & Scoring", color: "#00ff87" },
-  { id: "persist", label: "PERSIST", desc: "CRM Sync & Storage", color: "#8b5cf6" },
-  { id: "deliver", label: "DELIVER", desc: "Outreach & Notifications", color: "#f59e0b" },
+interface Layer {
+  id: string;
+  label: string;
+  y: number;
+  color: string;
+  streamCount: 3;
+}
+
+const LAYERS: Layer[] = [
+  { id: "ingest", label: "INGEST", y: 0.18, color: "#06b6d4", streamCount: 3 },
+  { id: "process", label: "PROCESS", y: 0.42, color: "#00ff87", streamCount: 3 },
+  { id: "persist", label: "PERSIST", y: 0.66, color: "#8b5cf6", streamCount: 3 },
+  { id: "deliver", label: "DELIVER", y: 0.90, color: "#f59e0b", streamCount: 3 },
 ];
+
+const STREAM_X_OFFSETS = [0.22, 0.5, 0.78];
 
 export default function HeroCanvas() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const animationRef = useRef<number | null>(null);
-  const particlesRef = useRef<Particle[]>([]);
+  const nodesRef = useRef<StreamNode[]>([]);
   const [isVisible, setIsVisible] = useState(false);
-  const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
-  const phaseWidthRef = useRef<number>(0);
+  const [mousePos, setMousePos] = useState({ x: -1000, y: -1000 });
   const timeRef = useRef(0);
+  const widthRef = useRef(0);
+  const heightRef = useRef(0);
+  const dprRef = useRef(1);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -37,176 +52,330 @@ export default function HeroCanvas() {
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
-    let width = 0;
-    let height = 0;
-    let dpr = window.devicePixelRatio || 1;
-
     const resize = () => {
       const rect = canvas.parentElement?.getBoundingClientRect();
       if (!rect) return;
-      width = rect.width;
-      height = rect.height;
-      dpr = window.devicePixelRatio || 1;
-      canvas.width = width * dpr;
-      canvas.height = height * dpr;
-      canvas.style.width = `${width}px`;
-      canvas.style.height = `${height}px`;
-      ctx.scale(dpr, dpr);
-      phaseWidthRef.current = width / PHASES.length;
+      widthRef.current = rect.width;
+      heightRef.current = rect.height;
+      dprRef.current = window.devicePixelRatio || 1;
+      canvas.width = widthRef.current * dprRef.current;
+      canvas.height = heightRef.current * dprRef.current;
+      canvas.style.width = `${widthRef.current}px`;
+      canvas.style.height = `${heightRef.current}px`;
+      ctx.scale(dprRef.current, dprRef.current);
     };
 
-    const initParticles = () => {
-      const count = Math.min(Math.floor(width * 0.6), 200);
-      particlesRef.current = Array.from({ length: count }, () => ({
-        x: Math.random() * width,
-        y: Math.random() * height,
-        vx: 0,
-        vy: 0,
-        size: 1.5 + Math.random() * 2.5,
-        opacity: 0.15 + Math.random() * 0.5,
-        color: PHASES[Math.floor(Math.random() * PHASES.length)].color,
-        trail: [],
-      }));
+    const initNodes = () => {
+      const nodes: StreamNode[] = [];
+      
+      LAYERS.forEach((layer, layerIdx) => {
+        STREAM_X_OFFSETS.forEach((streamOffset, streamIdx) => {
+          const baseX = widthRef.current * streamOffset;
+          const baseY = heightRef.current * layer.y;
+          
+          // Add multiple nodes per stream per layer
+          const nodeCount = layerIdx === 0 ? 8 : layerIdx === 1 ? 6 : layerIdx === 2 ? 5 : 4;
+          
+          for (let i = 0; i < nodeCount; i++) {
+            const angle = (Math.PI * 2 * i) / nodeCount;
+            const radius = 30 + layerIdx * 15 + Math.random() * 20;
+            
+            nodes.push({
+              x: baseX + Math.cos(angle) * radius,
+              y: baseY + Math.sin(angle) * radius,
+              targetX: baseX,
+              targetY: baseY,
+              vx: 0,
+              vy: 0,
+              radius: 3 + layerIdx * 1.5 + Math.random() * 2,
+              opacity: 0.3 + Math.random() * 0.5,
+              color: layer.color,
+              type: layerIdx === 0 ? 'lead' : layerIdx === 1 ? 'process' : layerIdx === 2 ? 'data' : 'output',
+              pulse: Math.random() * Math.PI * 2,
+            });
+          }
+        });
+      });
+      
+      // Add flowing particles between layers
+      for (let streamIdx = 0; streamIdx < 3; streamIdx++) {
+        for (let layerIdx = 0; layerIdx < 3; layerIdx++) {
+          const particleCount = 15;
+          for (let i = 0; i < particleCount; i++) {
+            const progress = i / particleCount;
+            const startY = heightRef.current * LAYERS[layerIdx].y;
+            const endY = heightRef.current * LAYERS[layerIdx + 1].y;
+            const baseX = widthRef.current * STREAM_X_OFFSETS[streamIdx];
+            
+            nodes.push({
+              x: baseX + (Math.random() - 0.5) * 40,
+              y: startY + progress * (endY - startY),
+              targetX: baseX,
+              targetY: endY,
+              vx: 0,
+              vy: 1 + layerIdx * 0.5 + Math.random() * 0.5,
+              radius: 1.5 + Math.random() * 1.5,
+              opacity: 0.2 + Math.random() * 0.4,
+              color: layerIdx === 2 ? "#f59e0b" : LAYERS[layerIdx + 1].color,
+              type: 'flow',
+              pulse: Math.random() * Math.PI * 2,
+            });
+          }
+        }
+      }
+      
+      nodesRef.current = nodes;
     };
 
-    const getPhaseAtX = (x: number) => {
-      const idx = Math.min(Math.floor(x / phaseWidthRef.current), PHASES.length - 1);
-      return PHASES[idx];
+    const drawGrid = (ctx: CanvasRenderingContext2D, w: number, h: number) => {
+      const gridSize = 60;
+      ctx.strokeStyle = "rgba(6, 182, 212, 0.03)";
+      ctx.lineWidth = 1;
+      
+      // Vertical lines
+      for (let x = 0; x <= w; x += gridSize) {
+        ctx.beginPath();
+        ctx.moveTo(x, 0);
+        ctx.lineTo(x, h);
+        ctx.stroke();
+      }
+      
+      // Horizontal lines
+      for (let y = 0; y <= h; y += gridSize) {
+        ctx.beginPath();
+        ctx.moveTo(0, y);
+        ctx.lineTo(w, y);
+        ctx.stroke();
+      }
+      
+      // Isometric grid lines (subtle)
+      ctx.strokeStyle = "rgba(0, 255, 135, 0.02)";
+      for (let i = -h; i < w + h; i += gridSize * 2) {
+        ctx.beginPath();
+        ctx.moveTo(i, 0);
+        ctx.lineTo(i + h, h);
+        ctx.stroke();
+      }
     };
 
-    const getPhaseSpeed = (x: number): number => {
-      const phaseIndex = Math.min(Math.floor(x / phaseWidthRef.current), PHASES.length - 1);
-      return 1 + phaseIndex * 0.35;
+    const drawLayerLabels = (ctx: CanvasRenderingContext2D, w: number, h: number) => {
+      LAYERS.forEach((layer) => {
+        const y = h * layer.y;
+        
+        // Layer background bar
+        const grad = ctx.createLinearGradient(0, y - 40, 0, y + 40);
+        grad.addColorStop(0, `${layer.color}08`);
+        grad.addColorStop(0.5, `${layer.color}15`);
+        grad.addColorStop(1, `${layer.color}08`);
+        ctx.fillStyle = grad;
+        ctx.fillRect(0, y - 45, w, 90);
+        
+        // Divider lines
+        ctx.strokeStyle = `${layer.color}20`;
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(0, y - 45);
+        ctx.lineTo(w, y - 45);
+        ctx.moveTo(0, y + 45);
+        ctx.lineTo(w, y + 45);
+        ctx.stroke();
+        
+        // Label
+        ctx.font = "600 11px 'Geist Mono', monospace";
+        ctx.fillStyle = layer.color;
+        ctx.textAlign = "left";
+        ctx.fillText(layer.label, 40, y + 4);
+        
+        // Description
+        const desc = layer.id === "ingest" ? "Chaotic Lead Intake Funnels" :
+                     layer.id === "process" ? "AI Processing Nodes" :
+                     layer.id === "persist" ? "Structured CRM Persistence" :
+                     "Automated Outbound Delivery";
+        ctx.font = "400 10px 'Geist', sans-serif";
+        ctx.fillStyle = "rgba(148, 163, 184, 0.5)";
+        ctx.fillText(desc, 40, y + 20);
+        
+        // Stream indicators
+        STREAM_X_OFFSETS.forEach((offset, i) => {
+          const x = w * offset;
+          ctx.beginPath();
+          ctx.arc(x, y, 6, 0, Math.PI * 2);
+          ctx.fillStyle = `${layer.color}40`;
+          ctx.fill();
+          
+          // Pulse ring
+          const pulseRadius = 6 + Math.sin(timeRef.current * 3 + i) * 3;
+          ctx.beginPath();
+          ctx.arc(x, y, pulseRadius, 0, Math.PI * 2);
+          ctx.strokeStyle = `${layer.color}30`;
+          ctx.lineWidth = 1;
+          ctx.stroke();
+        });
+      });
+    };
+
+    const drawConnections = (ctx: CanvasRenderingContext2D, w: number, h: number) => {
+      // Draw stream paths between layers
+      STREAM_X_OFFSETS.forEach((offset, streamIdx) => {
+        const x = w * offset;
+        
+        // Main vertical line
+        const grad = ctx.createLinearGradient(0, 0, 0, h);
+        LAYERS.forEach((layer, idx) => {
+          grad.addColorStop(idx / 3, `${layer.color}15`);
+        });
+        ctx.strokeStyle = grad;
+        ctx.lineWidth = 2;
+        ctx.setLineDash([10, 10]);
+        ctx.lineDashOffset = -timeRef.current * 50;
+        ctx.beginPath();
+        ctx.moveTo(x, h * LAYERS[0].y);
+        ctx.lineTo(x, h * LAYERS[3].y);
+        ctx.stroke();
+        ctx.setLineDash([]);
+        
+        // Cross connections between streams (subtle)
+        if (streamIdx < 2) {
+          const nextX = w * STREAM_X_OFFSETS[streamIdx + 1];
+          ctx.strokeStyle = "rgba(0, 255, 135, 0.05)";
+          ctx.lineWidth = 1;
+          LAYERS.forEach((layer) => {
+            const y = h * layer.y;
+            ctx.beginPath();
+            ctx.moveTo(x, y);
+            ctx.lineTo(nextX, y);
+            ctx.stroke();
+          });
+        }
+      });
     };
 
     const animate = () => {
       if (!ctx) return;
       timeRef.current += 0.016;
       
-      ctx.clearRect(0, 0, width, height);
-
-      // Draw phase dividers
-      ctx.strokeStyle = "rgba(0, 255, 135, 0.06)";
-      ctx.lineWidth = 1;
-      for (let i = 1; i < PHASES.length; i++) {
-        const x = i * phaseWidthRef.current;
-        ctx.beginPath();
-        ctx.moveTo(x, 0);
-        ctx.lineTo(x, height);
-        ctx.stroke();
-      }
-
-      // Draw phase panels
-      PHASES.forEach((phase, i) => {
-        const x = i * phaseWidthRef.current;
-        const panelWidth = phaseWidthRef.current;
-        
-        const grad = ctx.createLinearGradient(x, 0, x, 120);
-        grad.addColorStop(0, `${phase.color}15`);
-        grad.addColorStop(1, `${phase.color}02`);
-        ctx.fillStyle = grad;
-        ctx.fillRect(x + 16, 16, panelWidth - 32, 104);
-        
-        ctx.strokeStyle = `${phase.color}30`;
-        ctx.lineWidth = 1;
-        ctx.strokeRect(x + 16, 16, panelWidth - 32, 104);
-        
-        ctx.font = "600 11px 'Geist Mono', monospace";
-        ctx.fillStyle = phase.color;
-        ctx.fillText(phase.label, x + 28, 52);
-        
-        ctx.font = "400 10px 'Geist', sans-serif";
-        ctx.fillStyle = "rgba(148, 163, 184, 0.6)";
-        ctx.fillText(phase.desc, x + 28, 74);
-        
-        const progress = ((timeRef.current * 150) % (panelWidth - 56));
-        const barGrad = ctx.createLinearGradient(x + 28, 92, x + 28 + progress, 92);
-        barGrad.addColorStop(0, `${phase.color}00`);
-        barGrad.addColorStop(0.5, `${phase.color}80`);
-        barGrad.addColorStop(1, `${phase.color}00`);
-        ctx.fillStyle = barGrad;
-        ctx.fillRect(x + 28, 92, progress, 3);
-      });
-
-      particlesRef.current.forEach((p) => {
-        const phase = getPhaseAtX(p.x);
-        const speed = getPhaseSpeed(p.x);
-        
-        p.vx = 0.6 * speed + Math.sin(timeRef.current * 2 + p.x * 0.01) * 0.3 * speed;
-        p.vy = Math.sin(timeRef.current * 1.5 + p.y * 0.01) * 0.4;
-        
-        p.trail.unshift({ x: p.x, y: p.y });
-        if (p.trail.length > 8) p.trail.pop();
-        
-        p.x += p.vx;
-        p.y += p.vy;
-        p.color = phase.color;
-
-        if (p.x > width + 30) {
-          p.x = -30;
-          p.y = Math.random() * height;
-          p.opacity = 0.15 + Math.random() * 0.5;
-          p.size = 1.5 + Math.random() * 2.5;
-          p.trail = [];
-        }
-
-        if (p.y < 0) { p.y = 0; p.vy = Math.abs(p.vy) * 0.3; }
-        else if (p.y > height) { p.y = height; p.vy = -Math.abs(p.vy) * 0.3; }
-
-        const dx = p.x - mousePos.x;
-        const dy = p.y - mousePos.y;
+      const w = widthRef.current;
+      const h = heightRef.current;
+      
+      ctx.clearRect(0, 0, w, h);
+      
+      // Background grid
+      drawGrid(ctx, w, h);
+      
+      // Layer backgrounds and labels
+      drawLayerLabels(ctx, w, h);
+      
+      // Connections
+      drawConnections(ctx, w, h);
+      
+      // Update and draw nodes
+      nodesRef.current.forEach((node) => {
+        // Spring physics to target
+        const dx = node.targetX - node.x;
+        const dy = node.targetY - node.y;
         const dist = Math.sqrt(dx * dx + dy * dy);
-        if (dist < 180) {
-          const force = (180 - dist) / 180 * 0.6;
-          p.vx += (dx / dist) * force;
-          p.vy += (dy / dist) * force;
-        }
-
-        if (p.trail.length > 1) {
-          ctx.beginPath();
-          ctx.moveTo(p.trail[p.trail.length - 1].x, p.trail[p.trail.length - 1].y);
-          for (let i = p.trail.length - 2; i >= 0; i--) {
-            ctx.lineTo(p.trail[i].x, p.trail[i].y);
+        
+        if (node.type === 'flow') {
+          // Flowing particles move downward
+          node.y += node.vy;
+          node.x += (Math.random() - 0.5) * 0.5;
+          
+          // Reset when past deliver layer
+          if (node.y > h * LAYERS[3].y + 50) {
+            node.y = h * LAYERS[0].y - 50;
+            node.x = node.targetX + (Math.random() - 0.5) * 40;
+            node.opacity = 0.2 + Math.random() * 0.4;
           }
-          const trailGrad = ctx.createLinearGradient(
-            p.trail[p.trail.length - 1].x, p.trail[p.trail.length - 1].y,
-            p.x, p.y
-          );
-          trailGrad.addColorStop(0, `${p.color}00`);
-          trailGrad.addColorStop(1, `${p.color}${Math.floor(p.opacity * 180).toString(16).padStart(2, '0')}`);
-          ctx.strokeStyle = trailGrad;
-          ctx.lineWidth = p.size * 0.8;
-          ctx.lineCap = "round";
-          ctx.stroke();
+        } else {
+          // Orbiting nodes
+          const layerIdx = LAYERS.findIndex(l => l.color === node.color);
+          const streamIdx = STREAM_X_OFFSETS.findIndex(o => Math.abs(node.targetX - w * o) < 50);
+          const angle = timeRef.current * (0.5 + layerIdx * 0.15) + (streamIdx * Math.PI * 2 / 3) + node.pulse;
+          const orbitRadius = 40 + layerIdx * 20 + Math.sin(timeRef.current * 0.5 + node.pulse) * 15;
+          
+          node.targetX = w * STREAM_X_OFFSETS[streamIdx] + Math.cos(angle) * orbitRadius;
+          node.targetY = h * LAYERS[layerIdx].y + Math.sin(angle) * orbitRadius * 0.5;
+          
+          // Spring to target
+          node.vx += dx * 0.02;
+          node.vy += dy * 0.02;
+          node.vx *= 0.92;
+          node.vy *= 0.92;
+          node.x += node.vx;
+          node.y += node.vy;
         }
-
-        const coreGrad = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, p.size * 3);
-        coreGrad.addColorStop(0, `${p.color}${Math.floor(p.opacity * 255).toString(16).padStart(2, '0')}`);
-        coreGrad.addColorStop(1, `${p.color}00`);
+        
+        // Mouse influence
+        const mdx = node.x - mousePos.x;
+        const mdy = node.y - mousePos.y;
+        const mdist = Math.sqrt(mdx * mdx + mdy * mdy);
+        if (mdist < 200 && mdist > 0) {
+          const force = (200 - mdist) / 200 * 0.8;
+          node.vx += (mdx / mdist) * force;
+          node.vy += (mdy / mdist) * force;
+        }
+        
+        // Pulse animation
+        node.pulse += 0.02;
+        const pulseScale = 1 + Math.sin(node.pulse * 2) * 0.15;
+        
+        // Draw node
+        const drawRadius = node.radius * pulseScale;
+        
+        // Glow effect for process and deliver layers
+        if (node.type === 'process' || node.type === 'output') {
+          const glowGrad = ctx.createRadialGradient(node.x, node.y, 0, node.x, node.y, drawRadius * 4);
+          glowGrad.addColorStop(0, `${node.color}${Math.floor(node.opacity * 100).toString(16).padStart(2, '0')}`);
+          glowGrad.addColorStop(1, `${node.color}00`);
+          ctx.fillStyle = glowGrad;
+          ctx.beginPath();
+          ctx.arc(node.x, node.y, drawRadius * 4, 0, Math.PI * 2);
+          ctx.fill();
+        }
+        
+        // Core
+        const coreGrad = ctx.createRadialGradient(node.x, node.y, 0, node.x, node.y, drawRadius);
+        coreGrad.addColorStop(0, `${node.color}${Math.floor(node.opacity * 255).toString(16).padStart(2, '0')}`);
+        coreGrad.addColorStop(1, `${node.color}00`);
         ctx.fillStyle = coreGrad;
         ctx.beginPath();
-        ctx.arc(p.x, p.y, p.size * 2.5, 0, Math.PI * 2);
+        ctx.arc(node.x, node.y, drawRadius, 0, Math.PI * 2);
         ctx.fill();
-
-        ctx.fillStyle = `${p.color}${Math.floor(p.opacity * 255).toString(16).padStart(2, '0')}`;
+        
+        // Inner highlight
+        ctx.fillStyle = `${node.color}${Math.floor(node.opacity * 255).toString(16).padStart(2, '0')}`;
         ctx.beginPath();
-        ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+        ctx.arc(node.x, node.y, drawRadius * 0.4, 0, Math.PI * 2);
         ctx.fill();
       });
-
+      
+      // Draw stream labels at bottom
+      ctx.font = "500 10px 'Geist Mono', monospace";
+      ctx.textAlign = "center";
+      STREAM_X_OFFSETS.forEach((offset, i) => {
+        const x = w * offset;
+        const labels = ["Stream A", "Stream B", "Stream C"];
+        ctx.fillStyle = "rgba(148, 163, 184, 0.4)";
+        ctx.fillText(labels[i], x, h - 20);
+      });
+      
       animationRef.current = requestAnimationFrame(animate);
     };
 
     resize();
-    initParticles();
+    initNodes();
     animate();
 
     const handleResize = () => {
-      const prevWidth = width;
+      const prevW = widthRef.current;
+      const prevH = heightRef.current;
       resize();
-      if (prevWidth !== width) {
-        particlesRef.current.forEach(p => {
-          p.x = (p.x / prevWidth) * width;
+      if (prevW !== widthRef.current || prevH !== heightRef.current) {
+        nodesRef.current.forEach(node => {
+          node.x = (node.x / prevW) * widthRef.current;
+          node.y = (node.y / prevH) * heightRef.current;
+          node.targetX = (node.targetX / prevW) * widthRef.current;
+          node.targetY = (node.targetY / prevH) * heightRef.current;
         });
       }
     };
@@ -214,8 +383,8 @@ export default function HeroCanvas() {
     const handleMouseMove = (e: MouseEvent) => {
       const rect = canvas.getBoundingClientRect();
       setMousePos({
-        x: (e.clientX - rect.left) * dpr,
-        y: (e.clientY - rect.top) * dpr,
+        x: (e.clientX - rect.left) * dprRef.current,
+        y: (e.clientY - rect.top) * dprRef.current,
       });
     };
 
@@ -305,23 +474,13 @@ export default function HeroCanvas() {
           </div>
         </div>
 
-        <div className="relative mt-12 h-[320px] sm:h-[380px] lg:h-[420px]">
+        <div className="relative mt-12 h-[400px] sm:h-[480px] lg:h-[520px]">
           <canvas
             ref={canvasRef}
             className="w-full h-full glass rounded-2xl border-mint/10"
-            aria-label="Real-time four-phase automation pipeline: Ingest → Process → Persist → Deliver"
+            aria-label="3D isometric GTM data automation pipeline with 3 parallel streams across 4 layers: Ingest → Process → Persist → Deliver"
             role="img"
           />
-          <div className="absolute bottom-4 left-4 right-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs text-subtle">
-            <div className="flex items-center gap-2">
-              <span className="w-8 h-px bg-gradient-to-r from-transparent via-mint to-transparent" />
-              <span>Particles accelerate through each phase</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="w-8 h-px bg-gradient-to-r from-transparent via-cyan to-transparent" />
-              <span>Hover to influence flow</span>
-            </div>
-          </div>
         </div>
       </div>
 

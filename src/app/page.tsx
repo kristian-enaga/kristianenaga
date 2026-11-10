@@ -1,6 +1,8 @@
 import Header from "@/components/Header";
 import HeroCanvas from "@/components/HeroCanvas";
 import ProjectSection from "@/components/ProjectSection";
+import Approach from "@/components/Approach";
+import Contact from "@/components/Contact";
 import Footer from "@/components/Footer";
 
 export default function Home() {
@@ -10,6 +12,8 @@ export default function Home() {
       <main className="flex-1 relative z-10">
         <HeroCanvas />
         <ProjectSection />
+        <Approach />
+        <Contact />
       </main>
       <Footer />
     </>

@@ -2,14 +2,13 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { Menu, X, Zap, ChevronRight, Phone, MessageSquare, ArrowUpRight } from "lucide-react";
+import { Menu, X, Zap, ChevronRight, MessageSquare } from "lucide-react";
 
-const navSections = [
-  { href: "#portfolio", label: "Portfolio" },
-  { href: "#categories", label: "Business Categories" },
-  { href: "#stack", label: "Technical Stack" },
-  { href: "#approach", label: "Approach" },
-  { href: "#contact", label: "Contact" },
+const navLinks = [
+  { href: "#projects", label: "Projects" },
+  { href: "https://github.com/kristian-enaga", label: "GitHub", external: true },
+  { href: "https://www.linkedin.com/in/kristian-jay-e%C3%B1aga-85345741a/", label: "LinkedIn", external: true },
+  { href: "mailto:kchanchan2357@gmail.com", label: "Email" },
 ];
 
 export default function Header() {
@@ -47,36 +46,30 @@ export default function Header() {
             </span>
           </Link>
 
-          <div className="hidden lg:flex items-center gap-10">
-            {navSections.map((section) => (
+          <div className="hidden lg:flex items-center gap-8">
+            {navLinks.map((link) => (
               <a
-                key={section.href}
-                href={section.href}
+                key={link.href}
+                href={link.href}
+                target={link.external ? "_blank" : undefined}
+                rel={link.external ? "noopener noreferrer" : undefined}
                 className="relative text-sm font-medium text-muted hover:text-foreground transition-colors duration-300 after:absolute after:bottom-[-4px] after:left-0 after:h-[2px] after:w-0 after:bg-mint hover:after:w-full after:transition-all after:duration-300"
+                onClick={() => setIsMobileMenuOpen(false)}
               >
-                {section.label}
+                {link.label}
               </a>
             ))}
           </div>
 
-          <div className="hidden lg:flex items-center gap-4">
+          <div className="hidden lg:flex items-center gap-3">
             <a
               href="https://wa.me/639510833623"
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-center gap-2 px-5 py-2.5 rounded-full glass border-white/10 text-sm font-medium text-muted hover:text-foreground hover:border-mint/30 transition-all duration-300"
-              aria-label="WhatsApp: +63 951 083 3623"
+              className="flex items-center gap-2 px-4 py-2 rounded-full glass border-white/10 text-sm font-medium text-muted hover:text-foreground hover:border-mint/30 transition-all duration-500 ease-out"
             >
               <MessageSquare className="w-4 h-4" aria-hidden="true" />
               <span className="hidden sm:inline">WhatsApp</span>
-            </a>
-            <a
-              href="#contact"
-              className="btn-primary focus-ring whitespace-nowrap"
-              onClick={(e) => { e.preventDefault(); document.querySelector('#contact')?.scrollIntoView({ behavior: 'smooth' }); }}
-            >
-              Let's Work Together
-              <ChevronRight className="w-4 h-4 ml-2" aria-hidden="true" />
             </a>
           </div>
 
@@ -94,38 +87,31 @@ export default function Header() {
         <div
           id="mobile-menu"
           className={`lg:hidden overflow-hidden transition-all duration-300 ease-out ${
-            isMobileMenuOpen ? "max-h-96 opacity-100 pt-6" : "max-h-0 opacity-0"
+            isMobileMenuOpen ? "max-h-96 opacity-100 pt-4" : "max-h-0 opacity-0"
           }`}
         >
-          <div className="flex flex-col gap-4">
-            {navSections.map((section) => (
+          <div className="flex flex-col gap-3">
+            {navLinks.map((link) => (
               <a
-                key={section.href}
-                href={section.href}
-                className="text-lg font-medium text-muted hover:text-foreground transition-colors duration-300 pb-2 border-b border-white/5"
+                key={link.href}
+                href={link.href}
+                target={link.external ? "_blank" : undefined}
+                rel={link.external ? "noopener noreferrer" : undefined}
+                className="text-base font-medium text-muted hover:text-foreground transition-colors duration-300 py-2 border-b border-white/5"
                 onClick={() => setIsMobileMenuOpen(false)}
               >
-                {section.label}
+                {link.label}
               </a>
             ))}
-            <div className="flex flex-col gap-3 pt-4 border-t border-white/5">
-              <a
-                href="https://wa.me/639510833623"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center justify-center gap-2 px-5 py-3 rounded-full glass border-white/10 text-sm font-medium text-muted hover:text-foreground hover:border-mint/30 transition-all duration-300"
-              >
-                <MessageSquare className="w-5 h-5" aria-hidden="true" />
-                WhatsApp: +63 951 083 3623
-              </a>
-              <a
-                href="#contact"
-                className="btn-primary text-center"
-                onClick={() => { setIsMobileMenuOpen(false); document.querySelector('#contact')?.scrollIntoView({ behavior: 'smooth' }); }}
-              >
-                Let's Work Together
-              </a>
-            </div>
+            <a
+              href="https://wa.me/639510833623"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center justify-center gap-2 px-4 py-3 rounded-full glass border-white/10 text-sm font-medium text-muted hover:text-foreground hover:border-mint/30 transition-all duration-500 ease-out"
+            >
+              <MessageSquare className="w-5 h-5" aria-hidden="true" />
+              WhatsApp: +63 951 083 3623
+            </a>
           </div>
         </div>
       </div>

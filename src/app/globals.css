@@ -28,6 +28,8 @@
   --animate-slide-up: slide-up 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
   --animate-fade-in: fade-in 0.6s ease-out forwards;
   --animate-border-glow: border-glow 3s ease-in-out infinite;
+  --ease-out-cubic: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in-out-cubic: cubic-bezier(0.25, 0, 0.5, 1);
 }
 
 @keyframes pulse-glow {
@@ -109,7 +111,7 @@ body::before {
   }
 
   .btn-primary {
-    @apply relative px-8 py-4 rounded-full font-semibold text-base bg-white text-background overflow-hidden transition-all duration-300;
+    @apply relative px-8 py-4 rounded-full font-semibold text-base bg-white text-background overflow-hidden transition-all duration-500 ease-in-out-cubic;
   }
   
   .btn-primary::before {
@@ -134,11 +136,11 @@ body::before {
   }
 
   .btn-secondary {
-    @apply px-6 py-3 rounded-full font-medium text-sm bg-transparent text-foreground border border-white/10 hover:border-white/30 hover:bg-white/5 transition-all duration-300;
+    @apply px-6 py-3 rounded-full font-medium text-sm bg-transparent text-foreground border border-white/10 hover:border-white/30 hover:bg-white/5 transition-all duration-500 ease-in-out-cubic;
   }
 
   .card-hover {
-    @apply transition-all duration-500 ease-out;
+    @apply transition-all duration-500 ease-in-out-cubic;
   }
   
   .card-hover:hover {
@@ -152,6 +154,19 @@ body::before {
 
   .focus-ring {
     @apply focus:outline-none focus-visible:ring-2 focus-visible:ring-mint focus-visible:ring-offset-2 focus-visible:ring-offset-background;
+  }
+
+  .transition-ease-out-cubic {
+    transition-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .transition-ease-in-out-cubic {
+    transition-timing-function: cubic-bezier(0.25, 0, 0.5, 1);
+  }
+
+  .duration-500-cubic {
+    transition-duration: 500ms;
+    transition-timing-function: cubic-bezier(0.25, 0, 0.5, 1);
   }
 }
 

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { ArrowRight, Play, Github, ExternalLink, CheckCircle, Zap, Shield, Brain, Database, Globe, Layers, Terminal, Cloud, ArrowUpRight } from "lucide-react";
+import { ArrowRight, Play, Github, ExternalLink, CheckCircle, Zap, Shield, Brain, Database, Globe, Terminal, Layers, Cloud, ArrowUpRight, ChevronRight } from "lucide-react";
 
 interface Particle {
   x: number;
@@ -15,10 +15,10 @@ interface Particle {
 }
 
 const PHASES = [
-  { id: "ingest", label: "INGEST", desc: "Lead Capture & Webhooks", color: "#06b6d4", icon: Globe },
-  { id: "process", label: "PROCESS", desc: "AI Enrichment & Scoring", color: "#00ff87", icon: Brain },
-  { id: "persist", label: "PERSIST", desc: "CRM Sync & Storage", color: "#8b5cf6", icon: Database },
-  { id: "deliver", label: "DELIVER", desc: "Outreach & Notifications", color: "#f59e0b", icon: Terminal },
+  { id: "ingest", label: "INGEST", desc: "Lead Capture & Webhooks", color: "#06b6d4" },
+  { id: "process", label: "PROCESS", desc: "AI Enrichment & Scoring", color: "#00ff87" },
+  { id: "persist", label: "PERSIST", desc: "CRM Sync & Storage", color: "#8b5cf6" },
+  { id: "deliver", label: "DELIVER", desc: "Outreach & Notifications", color: "#f59e0b" },
 ];
 
 export default function HeroCanvas() {
@@ -101,29 +101,24 @@ export default function HeroCanvas() {
         const x = i * phaseWidthRef.current;
         const panelWidth = phaseWidthRef.current;
         
-        // Panel background
         const grad = ctx.createLinearGradient(x, 0, x, 120);
         grad.addColorStop(0, `${phase.color}15`);
         grad.addColorStop(1, `${phase.color}02`);
         ctx.fillStyle = grad;
         ctx.fillRect(x + 16, 16, panelWidth - 32, 104);
         
-        // Panel border
         ctx.strokeStyle = `${phase.color}30`;
         ctx.lineWidth = 1;
         ctx.strokeRect(x + 16, 16, panelWidth - 32, 104);
         
-        // Phase label
         ctx.font = "600 11px 'Geist Mono', monospace";
         ctx.fillStyle = phase.color;
         ctx.fillText(phase.label, x + 28, 52);
         
-        // Phase description
         ctx.font = "400 10px 'Geist', sans-serif";
         ctx.fillStyle = "rgba(148, 163, 184, 0.6)";
         ctx.fillText(phase.desc, x + 28, 74);
         
-        // Animated progress bar
         const progress = ((timeRef.current * 150) % (panelWidth - 56));
         const barGrad = ctx.createLinearGradient(x + 28, 92, x + 28 + progress, 92);
         barGrad.addColorStop(0, `${phase.color}00`);
@@ -133,26 +128,20 @@ export default function HeroCanvas() {
         ctx.fillRect(x + 28, 92, progress, 3);
       });
 
-      // Update and draw particles
       particlesRef.current.forEach((p) => {
         const phase = getPhaseAtX(p.x);
         const speed = getPhaseSpeed(p.x);
         
-        // Flow velocity increases through phases
         p.vx = 0.6 * speed + Math.sin(timeRef.current * 2 + p.x * 0.01) * 0.3 * speed;
         p.vy = Math.sin(timeRef.current * 1.5 + p.y * 0.01) * 0.4;
         
-        // Update trail
         p.trail.unshift({ x: p.x, y: p.y });
         if (p.trail.length > 8) p.trail.pop();
         
         p.x += p.vx;
         p.y += p.vy;
-        
-        // Color based on phase
         p.color = phase.color;
 
-        // Wrap around
         if (p.x > width + 30) {
           p.x = -30;
           p.y = Math.random() * height;
@@ -164,7 +153,6 @@ export default function HeroCanvas() {
         if (p.y < 0) { p.y = 0; p.vy = Math.abs(p.vy) * 0.3; }
         else if (p.y > height) { p.y = height; p.vy = -Math.abs(p.vy) * 0.3; }
 
-        // Mouse influence
         const dx = p.x - mousePos.x;
         const dy = p.y - mousePos.y;
         const dist = Math.sqrt(dx * dx + dy * dy);
@@ -174,7 +162,6 @@ export default function HeroCanvas() {
           p.vy += (dy / dist) * force;
         }
 
-        // Draw trail
         if (p.trail.length > 1) {
           ctx.beginPath();
           ctx.moveTo(p.trail[p.trail.length - 1].x, p.trail[p.trail.length - 1].y);
@@ -193,7 +180,6 @@ export default function HeroCanvas() {
           ctx.stroke();
         }
 
-        // Draw particle core
         const coreGrad = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, p.size * 3);
         coreGrad.addColorStop(0, `${p.color}${Math.floor(p.opacity * 255).toString(16).padStart(2, '0')}`);
         coreGrad.addColorStop(1, `${p.color}00`);
@@ -249,30 +235,25 @@ export default function HeroCanvas() {
   }, []);
 
   return (
-    <section className="relative min-h-screen flex items-center justify-center pt-20 overflow-hidden" aria-labelledby="hero-title">
+    <section className="relative min-h-[90vh] flex items-center justify-center pt-20 overflow-hidden" aria-labelledby="hero-title">
       <div className="absolute inset-0" aria-hidden="true">
         <div className="absolute inset-0 bg-gradient-to-b from-transparent via-background to-background opacity-60" />
         <div className="absolute top-1/4 left-1/4 w-[600px] h-[600px] bg-mint/5 rounded-full blur-[200px] animate-pulse" style={{ animationDuration: "4s" }} />
         <div className="absolute bottom-1/4 right-1/4 w-[500px] h-[500px] bg-cyan/5 rounded-full blur-[200px] animate-pulse" style={{ animationDuration: "4s", animationDelay: "1s" }} />
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-violet/3 rounded-full blur-[200px] opacity-30 animate-pulse" style={{ animationDuration: "6s", animationDelay: "2s" }} />
       </div>
 
-      <div className="relative z-10 w-full max-w-7xl mx-auto px-6 lg:px-12 py-20">
+      <div className="relative z-10 w-full max-w-7xl mx-auto px-6 lg:px-12 py-12">
         <div className="text-center" style={{ 
           opacity: isVisible ? 1 : 0, 
           transform: isVisible ? 'translateY(0)' : 'translateY(30px)', 
           transition: 'all 1s cubic-bezier(0.16, 1, 0.3, 1)' 
         }}>
-          <div className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full glass border-mint/20 mb-8 animate-fade-in" style={{ animationDelay: '200ms' }}>
-            <span className="w-2.5 h-2.5 bg-mint rounded-full animate-pulse" aria-hidden="true" />
-            <span className="text-sm font-medium text-mint">Available for Enterprise Contracts · UTC+8 (Philippines)</span>
+          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full glass border-mint/20 mb-6">
+            <span className="w-2 h-2 bg-mint rounded-full animate-pulse" aria-hidden="true" />
+            <span className="text-sm font-medium text-mint">Available for Enterprise Contracts · UTC+8</span>
           </div>
 
-          <h1
-            id="hero-title"
-            className="text-5xl sm:text-6xl lg:text-7xl xl:text-8xl font-bold tracking-tight leading-[1.02] text-white mb-8 animate-slide-up"
-            style={{ animationDelay: '300ms' }}
-          >
+          <h1 id="hero-title" className="text-4xl sm:text-5xl lg:text-6xl xl:text-7xl font-bold tracking-tight leading-[1.02] text-white mb-6">
             Automation That Fixes
             <br />
             <span className="text-gradient-mint">Revenue Operations</span>
@@ -280,72 +261,72 @@ export default function HeroCanvas() {
             At The Source
           </h1>
 
-          <p className="text-lg sm:text-xl lg:text-2xl text-muted max-w-3xl mx-auto mb-12 leading-relaxed animate-slide-up" style={{ animationDelay: '400ms' }}>
+          <p className="text-lg sm:text-xl lg:text-2xl text-muted max-w-3xl mx-auto mb-8 leading-relaxed">
             I build fail-safe automation systems that eliminate manual lead processing, connect disconnected business applications, and ensure workflow failures never go unnoticed. Ten production-grade systems. Zero silent failures.
           </p>
 
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 animate-slide-up" style={{ animationDelay: '500ms' }}>
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
             <a
-              href="#portfolio"
+              href="#projects"
               className="btn-primary focus-ring group"
-              onClick={(e) => { e.preventDefault(); document.querySelector('#portfolio')?.scrollIntoView({ behavior: 'smooth' }); }}
+              onClick={(e) => { e.preventDefault(); document.querySelector('#projects')?.scrollIntoView({ behavior: 'smooth' }); }}
             >
-              <span className="relative z-10">Explore Portfolio</span>
-              <ArrowRight className="w-5 h-5 ml-2 transition-transform group-hover:translate-x-1" aria-hidden="true" />
+              <span className="relative z-10">Explore Projects</span>
+              <ArrowRight className="w-5 h-5 ml-2 transition-transform duration-500 ease-out group-hover:-translate-y-1 group-hover:rotate-12" aria-hidden="true" />
             </a>
             <a
-              href="https://www.loom.com/share/5155791dfa914c43b0a09849b2ebb1fc"
+              href="https://www.loom.com/share/94749ae3e10d473d85bc6d022a45ef80"
               target="_blank"
               rel="noopener noreferrer"
               className="btn-secondary focus-ring group"
             >
               <Play className="w-4 h-4 mr-2" aria-hidden="true" />
-              Watch 15-min Walkthrough
+              3-min Self-Intro Walkthrough
             </a>
           </div>
 
-          <div className="flex flex-wrap items-center justify-center gap-6 mt-10 animate-fade-in" style={{ animationDelay: '600ms' }}>
-            <div className="flex items-center gap-2 text-sm text-muted">
+          <div className="flex flex-wrap items-center justify-center gap-5 mt-8 text-sm text-muted">
+            <div className="flex items-center gap-1.5">
               <CheckCircle className="w-4 h-4 text-mint" aria-hidden="true" />
               <span>10 Independent Systems</span>
             </div>
-            <div className="flex items-center gap-2 text-sm text-muted">
+            <div className="flex items-center gap-1.5">
               <CheckCircle className="w-4 h-4 text-mint" aria-hidden="true" />
               <span>10 GitHub Repositories</span>
             </div>
-            <div className="flex items-center gap-2 text-sm text-muted">
+            <div className="flex items-center gap-1.5">
               <CheckCircle className="w-4 h-4 text-mint" aria-hidden="true" />
               <span>10 Loom Demonstrations</span>
             </div>
-            <div className="flex items-center gap-2 text-sm text-muted">
+            <div className="flex items-center gap-1.5">
               <CheckCircle className="w-4 h-4 text-mint" aria-hidden="true" />
               <span>3 Business Categories</span>
             </div>
           </div>
         </div>
 
-        <div className="relative mt-16 h-[360px] sm:h-[420px] lg:h-[480px] animate-fade-in" style={{ animationDelay: '700ms' }}>
+        <div className="relative mt-12 h-[320px] sm:h-[380px] lg:h-[420px]">
           <canvas
             ref={canvasRef}
             className="w-full h-full glass rounded-2xl border-mint/10"
-            aria-label="Real-time four-phase automation pipeline visualization: Ingest → Process → Persist → Deliver"
+            aria-label="Real-time four-phase automation pipeline: Ingest → Process → Persist → Deliver"
             role="img"
           />
-          <div className="absolute bottom-6 left-6 right-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 text-xs text-subtle">
-            <div className="flex items-center gap-3">
-              <span className="w-10 h-px bg-gradient-to-r from-transparent via-mint to-transparent" />
+          <div className="absolute bottom-4 left-4 right-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs text-subtle">
+            <div className="flex items-center gap-2">
+              <span className="w-8 h-px bg-gradient-to-r from-transparent via-mint to-transparent" />
               <span>Particles accelerate through each phase</span>
             </div>
-            <div className="flex items-center gap-3">
-              <span className="w-10 h-px bg-gradient-to-r from-transparent via-cyan to-transparent" />
-              <span>Hover to influence flow trajectory</span>
+            <div className="flex items-center gap-2">
+              <span className="w-8 h-px bg-gradient-to-r from-transparent via-cyan to-transparent" />
+              <span>Hover to influence flow</span>
             </div>
           </div>
         </div>
       </div>
 
-      <div className="absolute bottom-8 left-1/2 -translate-x-1/2 animate-bounce" aria-hidden="true">
-        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="text-muted/50">
+      <div className="absolute bottom-6 left-1/2 -translate-x-1/2 animate-bounce" aria-hidden="true">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="text-muted/50">
           <path d="M12 5v14M19 12l-7 7-7-7" />
         </svg>
       </div>

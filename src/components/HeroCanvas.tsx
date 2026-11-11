@@ -2,6 +2,15 @@
 
 import { useEffect, useRef, useState } from "react";
 
+const STAGE_NAMES = ["INGEST", "PROCESS", "PERSIST", "DELIVER"] as const;
+
+const STAGE_COLORS = {
+  INGEST: { main: "#6366f1", glow: "rgba(99, 102, 241,", second: "#a855f7" },
+  PROCESS: { main: "#22c55e", glow: "rgba(34, 197, 94,", second: "#86efac" },
+  PERSIST: { main: "#a855f7", glow: "rgba(168, 85, 247,", second: "#c084fc" },
+  DELIVER: { main: "#f59e0b", glow: "rgba(245, 158, 11,", second: "#fef3c7" },
+};
+
 interface Particle {
   x: number;
   y: number;
@@ -10,50 +19,24 @@ interface Particle {
   radius: number;
   opacity: number;
   color: string;
-  type: 'chaos' | 'track' | 'core' | 'packet';
+  type: string;
   life: number;
   maxLife: number;
-  angle: number;
-  orbitRadius: number;
-  orbitSpeed: number;
-  orbitCenterX: number;
-  orbitCenterY: number;
-  trackIndex: number;
-  progress: number;
+  stage: number;
+  targetX: number;
+  targetY: number;
 }
-
-interface TrackNode {
-  x: number;
-  y: number;
-  radius: number;
-  opacity: number;
-  color: string;
-  pulse: number;
-  type: 'process' | 'storage' | 'output';
-}
-
-const TRACK_COLORS = [
-  { main: "#06b6d4", glow: "rgba(6, 182, 212, ", name: "INGEST" },
-  { main: "#00ff87", glow: "rgba(0, 255, 135, ", name: "PROCESS" },
-  { main: "#f59e0b", glow: "rgba(245, 158, 11, ", name: "DELIVER" },
-];
-
-const CHAOS_COLORS = [
-  "#dc2626", "#ef4444", "#f97316", "#fbbf24", "#84cc16", "#22c55e", "#06b6d4", "#3b82f6", "#8b5cf6", "#ec4899"
-];
 
 export default function HeroCanvas() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const animationRef = useRef<number | null>(null);
   const particlesRef = useRef<Particle[]>([]);
-  const trackNodesRef = useRef<TrackNode[]>([]);
   const [isVisible, setIsVisible] = useState(false);
-  const [mousePos, setMousePos] = useState({ x: -1000, y: -1000 });
   const timeRef = useRef(0);
   const widthRef = useRef(0);
   const heightRef = useRef(0);
   const dprRef = useRef(1);
-  const corePulseRef = useRef(0);
+  const particleCountRef = useRef(0);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -67,322 +50,134 @@ export default function HeroCanvas() {
       if (!rect) return;
       widthRef.current = rect.width;
       heightRef.current = rect.height;
-      dprRef.current = window.devicePixelRatio || 1;
+      dprRef.current = Math.min(window.devicePixelRatio || 1, 2);
       canvas.width = widthRef.current * dprRef.current;
       canvas.height = heightRef.current * dprRef.current;
       canvas.style.width = `${widthRef.current}px`;
       canvas.style.height = `${heightRef.current}px`;
-      ctx.scale(dprRef.current, dprRef.current);
+      ctx.setTransform(dprRef.current, 0, 0, dprRef.current, 0, 0);
       initScene();
     };
+
+    const MAX_PARTICLES = 60;
+    const STAGES = 4;
 
     const initScene = () => {
       const w = widthRef.current;
       const h = heightRef.current;
-      
-      // Clear existing
       particlesRef.current = [];
-      trackNodesRef.current = [];
 
-      // === CHAOTIC INTAKE PARTICLES (LEFT SIDE) ===
-      for (let i = 0; i < 120; i++) {
-        const angle = Math.random() * Math.PI * 2;
-        const radius = 50 + Math.random() * 150;
-        const cx = w * 0.15;
-        const cy = h * 0.45;
-        
+      const stageX = [w * 0.12, w * 0.34, w * 0.56, w * 0.78];
+      const stageY = h * 0.5;
+
+      // INGEST: chaotic intake cloud
+      for (let i = 0; i < 15; i++) {
         particlesRef.current.push({
-          x: cx + Math.cos(angle) * radius,
-          y: cy + Math.sin(angle) * radius,
-          vx: (Math.random() - 0.5) * 0.8,
-          vy: (Math.random() - 0.5) * 0.8,
-          radius: 1.5 + Math.random() * 3,
-          opacity: 0.15 + Math.random() * 0.5,
-          color: CHAOS_COLORS[Math.floor(Math.random() * CHAOS_COLORS.length)],
-          type: 'chaos',
+          x: stageX[0] + (Math.random() - 0.5) * 90,
+          y: stageY + (Math.random() - 0.5) * 60,
+          vx: (Math.random() - 0.5) * 0.6,
+          vy: (Math.random() - 0.5) * 0.6,
+          radius: 1.5 + Math.random() * 2,
+          opacity: 0.2 + Math.random() * 0.4,
+          color: STAGE_COLORS.INGEST.main,
+          type: "chaos",
           life: 0,
-          maxLife: 200 + Math.random() * 300,
-          angle: angle,
-          orbitRadius: radius,
-          orbitSpeed: 0.002 + Math.random() * 0.005,
-          orbitCenterX: cx,
-          orbitCenterY: cy,
-          trackIndex: -1,
-          progress: Math.random(),
+          maxLife: 120 + Math.random() * 200,
+          stage: 0,
+          targetX: stageX[0],
+          targetY: stageY,
         });
       }
 
-      // === 3 PARALLEL TRACKS WITH PROCESSING NODES ===
-      const trackYStart = h * 0.2;
-      const trackYEnd = h * 0.75;
-      const trackCount = 3;
-      const trackSpacing = (trackYEnd - trackYStart) / (trackCount - 1);
-      
-      for (let trackIdx = 0; trackIdx < trackCount; trackIdx++) {
-        const trackY = trackYStart + trackIdx * trackSpacing;
-        const trackColor = TRACK_COLORS[trackIdx];
-        
-        // Processing nodes along each track
-        const nodeCount = 8;
-        for (let i = 0; i < nodeCount; i++) {
-          const progress = i / (nodeCount - 1);
-          const nodeX = w * (0.28 + progress * 0.45);
-          
-          trackNodesRef.current.push({
-            x: nodeX,
-            y: trackY,
-            radius: 8 + Math.sin(progress * Math.PI) * 4,
-            opacity: 0.6 + 0.4 * Math.sin(progress * Math.PI),
-            color: trackColor.main,
-            pulse: Math.random() * Math.PI * 2,
-            type: trackIdx === 0 ? 'process' : trackIdx === 1 ? 'storage' : 'output',
-          });
-        }
-        
-        // Flowing data packets on tracks
-        for (let i = 0; i < 25; i++) {
-          const progress = i / 25;
-          const startX = w * 0.25;
-          const endX = w * 0.73;
-          const packetX = startX + progress * (endX - startX);
-          
-          particlesRef.current.push({
-            x: packetX,
-            y: trackY + (Math.random() - 0.5) * 12,
-            vx: 0.8 + trackIdx * 0.2 + Math.random() * 0.3,
-            vy: (Math.random() - 0.5) * 0.3,
-            radius: 2 + Math.random() * 2,
-            opacity: 0.4 + Math.random() * 0.4,
-            color: trackColor.main,
-            type: 'packet',
-            life: 0,
-            maxLife: 1000,
-            angle: 0,
-            orbitRadius: 0,
-            orbitSpeed: 0,
-            orbitCenterX: 0,
-            orbitCenterY: 0,
-            trackIndex: trackIdx,
-            progress: progress,
-          });
-        }
-      }
-
-      // === GLOWING SERVER CORE (RIGHT SIDE) ===
-      const coreX = w * 0.85;
-      const coreY = h * 0.45;
-      
-      // Core particles orbiting
-      for (let i = 0; i < 60; i++) {
-        const angle = (Math.PI * 2 * i) / 60;
-        const radius = 35 + Math.random() * 40;
-        
+      // PROCESS: ordered data matrix nodes
+      for (let i = 0; i < 8; i++) {
         particlesRef.current.push({
-          x: coreX + Math.cos(angle) * radius,
-          y: coreY + Math.sin(angle) * radius,
+          x: stageX[1] + (i % 4 - 1.5) * 22,
+          y: stageY + Math.floor(i / 4) * 18 - 18,
           vx: 0,
           vy: 0,
-          radius: 2 + Math.random() * 3,
-          opacity: 0.3 + Math.random() * 0.5,
-          color: i % 3 === 0 ? "#fffbe6" : i % 3 === 1 ? "#fde047" : "#fef08a",
-          type: 'core',
+          radius: 2.5,
+          opacity: 0.6,
+          color: STAGE_COLORS.PROCESS.main,
+          type: "matrix",
           life: 0,
           maxLife: 9999,
-          angle: angle,
-          orbitRadius: radius,
-          orbitSpeed: 0.015 + Math.random() * 0.01,
-          orbitCenterX: coreX,
-          orbitCenterY: coreY,
-          trackIndex: -1,
-          progress: 0,
+          stage: 1,
+          targetX: stageX[1] + (i % 4 - 1.5) * 22,
+          targetY: stageY + Math.floor(i / 4) * 18 - 18,
         });
       }
 
-      // Core burst particles
-      for (let i = 0; i < 40; i++) {
-        const angle = Math.random() * Math.PI * 2;
-        const radius = 10 + Math.random() * 80;
-        
+      // PERSIST: purple circuit paths
+      for (let i = 0; i < 6; i++) {
+        const angle = (Math.PI * 2 * i) / 6;
+        const r = 22;
         particlesRef.current.push({
-          x: coreX + Math.cos(angle) * radius,
-          y: coreY + Math.sin(angle) * radius,
-          vx: Math.cos(angle) * (0.5 + Math.random() * 1.5),
-          vy: Math.sin(angle) * (0.5 + Math.random() * 1.5),
-          radius: 1 + Math.random() * 2.5,
-          opacity: 0.5 + Math.random() * 0.5,
-          color: Math.random() > 0.5 ? "#fffbe6" : "#fde047",
-          type: 'core',
+          x: stageX[2] + Math.cos(angle) * r,
+          y: stageY + Math.sin(angle) * r * 0.5,
+          vx: 0,
+          vy: 0,
+          radius: 2,
+          opacity: 0.5,
+          color: STAGE_COLORS.PERSIST.main,
+          type: "circuit",
           life: 0,
-          maxLife: 150 + Math.random() * 200,
-          angle: angle,
-          orbitRadius: radius,
-          orbitSpeed: 0,
-          orbitCenterX: coreX,
-          orbitCenterY: coreY,
-          trackIndex: -1,
-          progress: 0,
+          maxLife: 9999,
+          stage: 2,
+          targetX: stageX[2] + Math.cos(angle) * r,
+          targetY: stageY + Math.sin(angle) * r * 0.5,
         });
       }
-    };
 
-    const drawFunnel = (ctx: CanvasRenderingContext2D, w: number, h: number) => {
-      // Funnel shape from chaotic left to tracks center
-      const funnelLeft = w * 0.15;
-      const funnelRight = w * 0.28;
-      const funnelTop = h * 0.15;
-      const funnelBottom = h * 0.85;
-      const trackTop = h * 0.2;
-      const trackBottom = h * 0.75;
-      
-      // Funnel gradient
-      const funnelGrad = ctx.createLinearGradient(funnelLeft, 0, funnelRight, 0);
-      funnelGrad.addColorStop(0, "rgba(220, 38, 38, 0.08)");
-      funnelGrad.addColorStop(0.5, "rgba(6, 182, 212, 0.06)");
-      funnelGrad.addColorStop(1, "rgba(0, 255, 135, 0.08)");
-      
-      ctx.fillStyle = funnelGrad;
-      ctx.beginPath();
-      ctx.moveTo(funnelLeft, funnelTop);
-      ctx.lineTo(funnelRight, trackTop);
-      ctx.lineTo(funnelRight, trackBottom);
-      ctx.lineTo(funnelLeft, funnelBottom);
-      ctx.closePath();
-      ctx.fill();
-      
-      // Funnel border glow
-      const borderGrad = ctx.createLinearGradient(funnelLeft, 0, funnelRight, 0);
-      borderGrad.addColorStop(0, "rgba(220, 38, 38, 0.3)");
-      borderGrad.addColorStop(0.5, "rgba(6, 182, 212, 0.4)");
-      borderGrad.addColorStop(1, "rgba(0, 255, 135, 0.5)");
-      
-      ctx.strokeStyle = borderGrad;
-      ctx.lineWidth = 2;
-      ctx.setLineDash([8, 8]);
-      ctx.lineDashOffset = -timeRef.current * 30;
-      ctx.beginPath();
-      ctx.moveTo(funnelLeft, funnelTop);
-      ctx.lineTo(funnelRight, trackTop);
-      ctx.lineTo(funnelRight, trackBottom);
-      ctx.lineTo(funnelLeft, funnelBottom);
-      ctx.closePath();
-      ctx.stroke();
-      ctx.setLineDash([]);
-    };
+      // DELIVER: golden outputs with bloom (limited count for performance)
+      for (let i = 0; i < 12; i++) {
+        const angle = (Math.PI * 2 * i) / 12;
+        const r = 28;
+        particlesRef.current.push({
+          x: stageX[3] + Math.cos(angle) * r,
+          y: stageY + Math.sin(angle) * r * 0.4,
+          vx: 0,
+          vy: 0,
+          radius: 2 + Math.random() * 2,
+          opacity: 0.7,
+          color: STAGE_COLORS.DELIVER.main,
+          type: "output",
+          life: 0,
+          maxLife: 9999,
+          stage: 3,
+          targetX: stageX[3] + Math.cos(angle) * r,
+          targetY: stageY + Math.sin(angle) * r * 0.4,
+        });
+      }
 
-    const drawTrackPaths = (ctx: CanvasRenderingContext2D, w: number, h: number) => {
-      const trackYStart = h * 0.2;
-      const trackYEnd = h * 0.75;
-      const trackCount = 3;
-      const trackSpacing = (trackYEnd - trackYStart) / (trackCount - 1);
-      const startX = w * 0.28;
-      const endX = w * 0.73;
-      
-      for (let trackIdx = 0; trackIdx < trackCount; trackIdx++) {
-        const trackY = trackYStart + trackIdx * trackSpacing;
-        const trackColor = TRACK_COLORS[trackIdx];
-        
-        // Main track line with glow
-        const trackGrad = ctx.createLinearGradient(startX, 0, endX, 0);
-        trackGrad.addColorStop(0, `${trackColor.glow}0.15)`);
-        trackGrad.addColorStop(0.3, `${trackColor.glow}0.35)`);
-        trackGrad.addColorStop(0.7, `${trackColor.glow}0.5)`);
-        trackGrad.addColorStop(1, `${trackColor.glow}0.3)`);
-        
-        ctx.strokeStyle = trackGrad;
-        ctx.lineWidth = 3;
-        ctx.shadowColor = trackColor.main;
-        ctx.shadowBlur = 15;
-        ctx.beginPath();
-        ctx.moveTo(startX, trackY);
-        ctx.lineTo(endX, trackY);
-        ctx.stroke();
-        ctx.shadowBlur = 0;
-        
-        // Track label
-        ctx.font = "600 10px 'Geist Mono', monospace";
-        ctx.fillStyle = trackColor.main;
-        ctx.textAlign = "right";
-        ctx.fillText(trackColor.name, startX - 15, trackY + 3);
-        
-        // Track accent dots
-        for (let i = 0; i < 5; i++) {
-          const dotX = startX + (endX - startX) * (i / 4);
-          ctx.beginPath();
-          ctx.arc(dotX, trackY, 3, 0, Math.PI * 2);
-          const dotAlpha = 0.3 + 0.7 * Math.abs(Math.sin(timeRef.current * 2 + i + trackIdx));
-          ctx.fillStyle = `${trackColor.glow}${Math.floor(dotAlpha * 255).toString(16).padStart(2, '0')})`;
-          ctx.fill();
+      // Flowing data packets moving between stages
+      for (let s = 0; s < STAGES - 1; s++) {
+        for (let i = 0; i < 4; i++) {
+          const progress = i / 4;
+          particlesRef.current.push({
+            x: stageX[s] + (stageX[s + 1] - stageX[s]) * progress,
+            y: stageY + (Math.random() - 0.5) * 8,
+            vx: 0.4 + s * 0.1,
+            vy: Math.sin(timeRef.current + progress * 10) * 0.15,
+            radius: 1.5,
+            opacity: 0.5,
+            color: STAGE_COLORS[STAGE_NAMES[s]].main,
+            type: "packet",
+            life: 0,
+            maxLife: 9999,
+            stage: s,
+            targetX: stageX[s + 1],
+            targetY: stageY,
+          });
         }
       }
+
+      particleCountRef.current = particlesRef.current.length;
     };
 
-    const drawCore = (ctx: CanvasRenderingContext2D, w: number, h: number) => {
-      const coreX = w * 0.85;
-      const coreY = h * 0.45;
-      
-      corePulseRef.current += 0.02;
-      const pulseScale = 1 + Math.sin(corePulseRef.current) * 0.15;
-      const pulseScale2 = 1 + Math.sin(corePulseRef.current * 1.5) * 0.1;
-      
-      // Outer glow rings
-      for (let ring = 0; ring < 5; ring++) {
-        const ringRadius = (80 + ring * 25) * pulseScale;
-        const ringGrad = ctx.createRadialGradient(coreX, coreY, ringRadius * 0.3, coreX, coreY, ringRadius);
-        const alpha = (0.15 - ring * 0.02) * (0.8 + 0.2 * Math.sin(corePulseRef.current * 0.5 + ring));
-        ringGrad.addColorStop(0, `rgba(255, 251, 230, ${alpha})`);
-        ringGrad.addColorStop(0.5, `rgba(253, 224, 71, ${alpha * 0.6})`);
-        ringGrad.addColorStop(1, `rgba(245, 158, 11, ${alpha * 0.2})`);
-        ctx.fillStyle = ringGrad;
-        ctx.beginPath();
-        ctx.arc(coreX, coreY, ringRadius, 0, Math.PI * 2);
-        ctx.fill();
-      }
-      
-      // Core inner bright sphere
-      const coreRadius = 35 * pulseScale2;
-      const coreGrad = ctx.createRadialGradient(coreX, coreY, 0, coreX, coreY, coreRadius);
-      coreGrad.addColorStop(0, "#ffffff");
-      coreGrad.addColorStop(0.2, "#fffbe6");
-      coreGrad.addColorStop(0.5, "#fde047");
-      coreGrad.addColorStop(0.8, "#f59e0b");
-      coreGrad.addColorStop(1, "rgba(245, 158, 11, 0)");
-      ctx.fillStyle = coreGrad;
-      ctx.beginPath();
-      ctx.arc(coreX, coreY, coreRadius, 0, Math.PI * 2);
-      ctx.fill();
-      
-      // Core inner highlight
-      ctx.fillStyle = "rgba(255, 255, 255, 0.9)";
-      ctx.beginPath();
-      ctx.arc(coreX - coreRadius * 0.2, coreY - coreRadius * 0.2, coreRadius * 0.3, 0, Math.PI * 2);
-      ctx.fill();
-      
-      // Convergence lines from tracks to core
-      const trackYStart = h * 0.2;
-      const trackYEnd = h * 0.75;
-      const trackCount = 3;
-      const trackSpacing = (trackYEnd - trackYStart) / (trackCount - 1);
-      const endX = w * 0.73;
-      
-      for (let trackIdx = 0; trackIdx < trackCount; trackIdx++) {
-        const trackY = trackYStart + trackIdx * trackSpacing;
-        const trackColor = TRACK_COLORS[trackIdx];
-        
-        ctx.strokeStyle = `${trackColor.glow}0.4)`;
-        ctx.lineWidth = 2;
-        ctx.setLineDash([5, 5]);
-        ctx.lineDashOffset = -timeRef.current * 40;
-        ctx.beginPath();
-        ctx.moveTo(endX, trackY);
-        ctx.quadraticCurveTo((endX + coreX) / 2, trackY, coreX, coreY);
-        ctx.stroke();
-        ctx.setLineDash([]);
-      }
-    };
-
-    const drawGrid = (ctx: CanvasRenderingContext2D, w: number, h: number) => {
-      const gridSize = 50;
-      ctx.strokeStyle = "rgba(6, 182, 212, 0.02)";
+    const drawIsometricGrid = (ctx: CanvasRenderingContext2D, w: number, h: number) => {
+      const gridSize = 60;
+      ctx.strokeStyle = "rgba(99, 102, 241, 0.06)";
       ctx.lineWidth = 1;
       
       for (let x = 0; x <= w; x += gridSize) {
@@ -397,14 +192,103 @@ export default function HeroCanvas() {
         ctx.lineTo(w, y);
         ctx.stroke();
       }
+    };
+
+    const drawStage = (
+      ctx: CanvasRenderingContext2D,
+      w: number,
+      h: number,
+      stageIdx: number,
+      colorObj: { main: string; glow: string; second: string },
+      label: string
+    ) => {
+      const x = [w * 0.12, w * 0.34, w * 0.56, w * 0.78][stageIdx];
+      const y = h * 0.5;
       
-      // Isometric accent lines
-      ctx.strokeStyle = "rgba(0, 255, 135, 0.015)";
-      for (let i = -h; i < w + h; i += gridSize * 3) {
+      // Isometric diamond base
+      const diamondW = stageIdx === 3 ? 100 : 70;
+      const diamondH = stageIdx === 3 ? 50 : 35;
+      
+      ctx.save();
+      ctx.translate(x, y);
+      
+      // Floor grid under stage
+      ctx.strokeStyle = `${colorObj.glow}0.15)`;
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(-diamondW, 0);
+      ctx.lineTo(0, -diamondH / 2);
+      ctx.lineTo(diamondW, 0);
+      ctx.lineTo(0, diamondH / 2);
+      ctx.closePath();
+      ctx.stroke();
+      
+      // Stage label
+      ctx.font = "600 11px 'Geist Mono', monospace";
+      ctx.fillStyle = colorObj.main;
+      ctx.textAlign = "center";
+      ctx.fillText(label, 0, -diamondH - 14);
+      
+      // Sub label
+      const subLabels = {
+        INGEST: "Load Capture",
+        PROCESS: "AI Processing",
+        PERSIST: "DB Storage",
+        DELIVER: "API Dispatch",
+      };
+      ctx.font = "500 9px 'Geist', sans-serif";
+      ctx.fillStyle = "rgba(148, 163, 184, 0.5)";
+      ctx.fillText(subLabels[label as keyof typeof subLabels], 0, -diamondH - 4);
+      
+      ctx.restore();
+
+      // Bloom for DELIVER only (performance optimization)
+      if (stageIdx === 3) {
+        const bloomGrad = ctx.createRadialGradient(x, y, 0, x, y, 90);
+        bloomGrad.addColorStop(0, `${colorObj.glow}0.35)`);
+        bloomGrad.addColorStop(0.5, `${colorObj.glow}0.12)`);
+        bloomGrad.addColorStop(1, `${colorObj.glow}0)`);
+        ctx.fillStyle = bloomGrad;
         ctx.beginPath();
-        ctx.moveTo(i, 0);
-        ctx.lineTo(i + h, h);
+        ctx.arc(x, y, 90, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // Lens flare accent
+        const flareGrad = ctx.createLinearGradient(x - 40, y - 40, x + 40, y + 40);
+        flareGrad.addColorStop(0, "rgba(254, 243, 199, 0)");
+        flareGrad.addColorStop(0.5, "rgba(254, 243, 199, 0.15)");
+        flareGrad.addColorStop(1, "rgba(254, 243, 199, 0)");
+        ctx.fillStyle = flareGrad;
+        ctx.beginPath();
+        ctx.moveTo(x - 50, y - 50);
+        ctx.lineTo(x + 50, y - 30);
+        ctx.lineTo(x + 30, y + 30);
+        ctx.lineTo(x - 30, y + 50);
+        ctx.closePath();
+        ctx.fill();
+      }
+    };
+
+    const drawConnections = (ctx: CanvasRenderingContext2D, w: number, h: number) => {
+      const stageX = [w * 0.12, w * 0.34, w * 0.56, w * 0.78];
+      const stageY = h * 0.5;
+      
+      for (let i = 0; i < stageX.length - 1; i++) {
+        const colorObj = STAGE_COLORS[STAGE_NAMES[i]];
+        const grad = ctx.createLinearGradient(stageX[i], stageY, stageX[i + 1], stageY);
+        grad.addColorStop(0, `${colorObj.glow}0.2)`);
+        grad.addColorStop(0.5, `${colorObj.glow}0.4)`);
+        grad.addColorStop(1, `${colorObj.glow}0.2)`);
+        
+        ctx.strokeStyle = grad;
+        ctx.lineWidth = 2;
+        ctx.setLineDash([10, 10]);
+        ctx.lineDashOffset = -timeRef.current * 30;
+        ctx.beginPath();
+        ctx.moveTo(stageX[i], stageY);
+        ctx.lineTo(stageX[i + 1], stageY);
         ctx.stroke();
+        ctx.setLineDash([]);
       }
     };
 
@@ -415,258 +299,98 @@ export default function HeroCanvas() {
       const w = widthRef.current;
       const h = heightRef.current;
       
-      // Clear with dark background
+      // Clear
       ctx.fillStyle = "#020617";
       ctx.fillRect(0, 0, w, h);
       
-      // Background grid
-      drawGrid(ctx, w, h);
+      // Isometric grid
+      drawIsometricGrid(ctx, w, h);
       
-      // Funnel
-      drawFunnel(ctx, w, h);
+      // Connections between stages
+      drawConnections(ctx, w, h);
       
-      // Track paths
-      drawTrackPaths(ctx, w, h);
+      // Draw each stage
+      drawStage(ctx, w, h, 0, STAGE_COLORS.INGEST, "INGEST");
+      drawStage(ctx, w, h, 1, STAGE_COLORS.PROCESS, "PROCESS");
+      drawStage(ctx, w, h, 2, STAGE_COLORS.PERSIST, "PERSIST");
+      drawStage(ctx, w, h, 3, STAGE_COLORS.DELIVER, "DELIVER");
       
-      // Glowing core
-      drawCore(ctx, w, h);
-      
-      // Update and draw particles
+      // Update particles
       const newParticles: Particle[] = [];
       
-      particlesRef.current.forEach((particle) => {
-        particle.life++;
+      particlesRef.current.forEach((p) => {
+        if (p.type === "chaos") {
+          p.x += p.vx;
+          p.y += p.vy;
+          p.life++;
+          
+          // Bounce within chaos zone
+          if (Math.abs(p.x - p.targetX) > 45) p.vx *= -1;
+          if (Math.abs(p.y - p.targetY) > 30) p.vy *= -1;
+          
+          // Pulse opacity
+          p.opacity = 0.2 + 0.4 * Math.abs(Math.sin(timeRef.current * 2 + p.life * 0.05));
+          
+          newParticles.push(p);
+        }
+        else if (p.type === "matrix") {
+          // Subtle pulse
+          p.opacity = 0.5 + 0.3 * Math.abs(Math.sin(timeRef.current * 1.5 + p.life * 0.03));
+          p.y = p.targetY + Math.sin(timeRef.current + p.life * 0.1) * 2;
+          newParticles.push(p);
+        }
+        else if (p.type === "circuit") {
+          p.opacity = 0.4 + 0.4 * Math.abs(Math.sin(timeRef.current * 1 + p.life * 0.05));
+          newParticles.push(p);
+        }
+        else if (p.type === "output") {
+          // Deliver: bright pulsing with bloom
+          p.opacity = 0.6 + 0.4 * Math.abs(Math.sin(timeRef.current * 3 + p.life * 0.08));
+          p.y = p.targetY + Math.sin(timeRef.current * 2 + p.life * 0.1) * 3;
+          newParticles.push(p);
+        }
+        else if (p.type === "packet") {
+          // Moving packet between stages
+          p.x += p.vx;
+          p.y += p.vy;
+          p.life++;
+          
+          // Loop back
+          if (p.x > p.targetX + 40) {
+            p.x = [w * 0.12, w * 0.34, w * 0.56][p.stage] - 40;
+            p.life = 0;
+          }
+          
+          newParticles.push(p);
+        }
+      });
+      
+      // Draw particles with minimal bloom (no shadowBlur for performance)
+      newParticles.forEach((p) => {
+        const r = p.radius;
         
-        if (particle.type === 'chaos') {
-          // Orbit around funnel center
-          particle.angle += particle.orbitSpeed;
-          particle.orbitRadius *= 0.9995; // Slowly spiral inward
-          
-          const targetX = particle.orbitCenterX + Math.cos(particle.angle) * particle.orbitRadius;
-          const targetY = particle.orbitCenterY + Math.sin(particle.angle) * particle.orbitRadius;
-          
-          // Spring toward orbit
-          particle.vx += (targetX - particle.x) * 0.02;
-          particle.vy += (targetY - particle.y) * 0.02;
-          particle.vx *= 0.95;
-          particle.vy *= 0.95;
-          particle.x += particle.vx;
-          particle.y += particle.vy;
-          
-          // Mouse repulsion
-          const mdx = particle.x - mousePos.x;
-          const mdy = particle.y - mousePos.y;
-          const mdist = Math.sqrt(mdx * mdx + mdy * mdy);
-          if (mdist < 150 && mdist > 0) {
-            const force = (150 - mdist) / 150 * 1.5;
-            particle.vx += (mdx / mdist) * force;
-            particle.vy += (mdy / mdist) * force;
-          }
-          
-          // Fade out as it reaches funnel
-          if (particle.orbitRadius < 60) {
-            particle.opacity *= 0.98;
-          }
-          
-          if (particle.life < particle.maxLife && particle.opacity > 0.02) {
-            newParticles.push(particle);
-          } else {
-            // Respawn at edge
-            const angle = Math.random() * Math.PI * 2;
-            const radius = 120 + Math.random() * 100;
-            const cx = w * 0.15;
-            const cy = h * 0.45;
-            newParticles.push({
-              ...particle,
-              x: cx + Math.cos(angle) * radius,
-              y: cy + Math.sin(angle) * radius,
-              vx: (Math.random() - 0.5) * 0.5,
-              vy: (Math.random() - 0.5) * 0.5,
-              radius: 1.5 + Math.random() * 3,
-              opacity: 0.15 + Math.random() * 0.5,
-              color: CHAOS_COLORS[Math.floor(Math.random() * CHAOS_COLORS.length)],
-              life: 0,
-              maxLife: 200 + Math.random() * 300,
-              angle: angle,
-              orbitRadius: radius,
-              orbitSpeed: 0.002 + Math.random() * 0.005,
-            });
-          }
+        // Outer glow (only for output type)
+        if (p.type === "output") {
+          const grad = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, r * 6);
+          grad.addColorStop(0, `${p.color}${Math.floor(p.opacity * 150).toString(16).padStart(2, '0')}`);
+          grad.addColorStop(1, `${p.color}00`);
+          ctx.fillStyle = grad;
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, r * 6, 0, Math.PI * 2);
+          ctx.fill();
         }
-        else if (particle.type === 'packet') {
-          // Flow along track
-          particle.x += particle.vx;
-          
-          // Slight vertical wobble
-          particle.y += Math.sin(timeRef.current * 3 + particle.progress * 20) * 0.15;
-          
-          // Mouse attraction
-          const mdx = mousePos.x - particle.x;
-          const mdy = mousePos.y - particle.y;
-          const mdist = Math.sqrt(mdx * mdx + mdy * mdy);
-          if (mdist < 200 && mdist > 0) {
-            const force = (200 - mdist) / 200 * 0.3;
-            particle.vx += (mdx / mdist) * force;
-            particle.vy += (mdy / mdist) * force;
-          }
-          
-          // Reset when past core
-          if (particle.x > w * 0.82) {
-            particle.x = w * 0.25;
-            particle.progress = 0;
-            particle.opacity = 0.4 + Math.random() * 0.4;
-          }
-          
-          newParticles.push(particle);
-        }
-        else if (particle.type === 'core') {
-          if (particle.orbitSpeed > 0) {
-            // Orbiting core particles
-            particle.angle += particle.orbitSpeed * (0.5 + Math.sin(timeRef.current * 0.3) * 0.3);
-            particle.orbitRadius = particle.orbitRadius * 0.9999 + Math.sin(timeRef.current * 0.5 + particle.angle) * 0.5;
-            
-            particle.x = particle.orbitCenterX + Math.cos(particle.angle) * particle.orbitRadius;
-            particle.y = particle.orbitCenterY + Math.sin(particle.angle) * particle.orbitRadius;
-            
-            // Pulse opacity
-            particle.opacity = 0.3 + 0.5 * Math.abs(Math.sin(timeRef.current * 2 + particle.angle));
-            
-            newParticles.push(particle);
-          } else {
-            // Burst particles
-            particle.x += particle.vx;
-            particle.y += particle.vy;
-            particle.vx *= 0.98;
-            particle.vy *= 0.98;
-            particle.opacity *= 0.99;
-            
-            if (particle.life < particle.maxLife && particle.opacity > 0.02) {
-              newParticles.push(particle);
-            } else {
-              // Respawn burst
-              const angle = Math.random() * Math.PI * 2;
-              const radius = 10 + Math.random() * 80;
-              newParticles.push({
-                ...particle,
-                x: particle.orbitCenterX + Math.cos(angle) * radius,
-                y: particle.orbitCenterY + Math.sin(angle) * radius,
-                vx: Math.cos(angle) * (0.5 + Math.random() * 1.5),
-                vy: Math.sin(angle) * (0.5 + Math.random() * 1.5),
-                radius: 1 + Math.random() * 2.5,
-                opacity: 0.5 + Math.random() * 0.5,
-                color: Math.random() > 0.5 ? "#fffbe6" : "#fde047",
-                life: 0,
-                maxLife: 150 + Math.random() * 200,
-              });
-            }
-          }
-        }
+        
+        // Core
+        const coreGrad = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, r);
+        coreGrad.addColorStop(0, `${p.color}${Math.floor(p.opacity * 255).toString(16).padStart(2, '0')}`);
+        coreGrad.addColorStop(1, `${p.color}00`);
+        ctx.fillStyle = coreGrad;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, r, 0, Math.PI * 2);
+        ctx.fill();
       });
       
       particlesRef.current = newParticles;
-      
-      // Draw all particles
-      particlesRef.current.forEach((particle) => {
-        const drawRadius = particle.radius;
-        
-        // Glow for core and track particles
-        if (particle.type === 'core' || particle.type === 'packet') {
-          const glowGrad = ctx.createRadialGradient(particle.x, particle.y, 0, particle.x, particle.y, drawRadius * 5);
-          const glowAlpha = Math.floor(particle.opacity * 100).toString(16).padStart(2, '0');
-          glowGrad.addColorStop(0, `${particle.color}${glowAlpha}`);
-          glowGrad.addColorStop(1, `${particle.color}00`);
-          ctx.fillStyle = glowGrad;
-          ctx.beginPath();
-          ctx.arc(particle.x, particle.y, drawRadius * 5, 0, Math.PI * 2);
-          ctx.fill();
-        }
-        
-        // Core particle core
-        const coreGrad = ctx.createRadialGradient(particle.x, particle.y, 0, particle.x, particle.y, drawRadius);
-        const coreAlpha = Math.floor(particle.opacity * 255).toString(16).padStart(2, '0');
-        coreGrad.addColorStop(0, `${particle.color}${coreAlpha}`);
-        coreGrad.addColorStop(1, `${particle.color}00`);
-        ctx.fillStyle = coreGrad;
-        ctx.beginPath();
-        ctx.arc(particle.x, particle.y, drawRadius, 0, Math.PI * 2);
-        ctx.fill();
-        
-        // Bright center for core particles
-        if (particle.type === 'core') {
-          ctx.fillStyle = particle.color;
-          ctx.beginPath();
-          ctx.arc(particle.x, particle.y, drawRadius * 0.4, 0, Math.PI * 2);
-          ctx.fill();
-        }
-      });
-      
-      // Draw track nodes
-      trackNodesRef.current.forEach((node) => {
-        node.pulse += 0.03;
-        const pulseScale = 1 + Math.sin(node.pulse) * 0.2;
-        const drawRadius = node.radius * pulseScale;
-        
-        // Node glow
-        const nodeGlowGrad = ctx.createRadialGradient(node.x, node.y, 0, node.x, node.y, drawRadius * 3);
-        nodeGlowGrad.addColorStop(0, `${node.color}${Math.floor(node.opacity * 200).toString(16).padStart(2, '0')}`);
-        nodeGlowGrad.addColorStop(1, `${node.color}00`);
-        ctx.fillStyle = nodeGlowGrad;
-        ctx.beginPath();
-        ctx.arc(node.x, node.y, drawRadius * 3, 0, Math.PI * 2);
-        ctx.fill();
-        
-        // Node core
-        const nodeCoreGrad = ctx.createRadialGradient(node.x, node.y, 0, node.x, node.y, drawRadius);
-        nodeCoreGrad.addColorStop(0, `${node.color}${Math.floor(node.opacity * 255).toString(16).padStart(2, '0')}`);
-        nodeCoreGrad.addColorStop(1, `${node.color}00`);
-        ctx.fillStyle = nodeCoreGrad;
-        ctx.beginPath();
-        ctx.arc(node.x, node.y, drawRadius, 0, Math.PI * 2);
-        ctx.fill();
-        
-        // Inner highlight
-        ctx.fillStyle = `${node.color}${Math.floor(node.opacity * 255).toString(16).padStart(2, '0')}`;
-        ctx.beginPath();
-        ctx.arc(node.x, node.y, drawRadius * 0.3, 0, Math.PI * 2);
-        ctx.fill();
-        
-        // Node label
-        ctx.font = "500 9px 'Geist Mono', monospace";
-        ctx.fillStyle = "rgba(148, 163, 184, 0.5)";
-        ctx.textAlign = "center";
-        const labels = node.type === 'process' ? "TRANSFORM" : node.type === 'storage' ? "STORE" : "EMIT";
-        ctx.fillText(labels, node.x, node.y - drawRadius - 8);
-      });
-      
-      // Connections between track nodes
-      const trackYStart = h * 0.2;
-      const trackYEnd = h * 0.75;
-      const trackCount = 3;
-      const trackSpacing = (trackYEnd - trackYStart) / (trackCount - 1);
-      const nodesPerTrack = 8;
-      
-      for (let trackIdx = 0; trackIdx < trackCount; trackIdx++) {
-        const trackColor = TRACK_COLORS[trackIdx];
-        for (let i = 0; i < nodesPerTrack - 1; i++) {
-          const nodeIdx1 = trackIdx * nodesPerTrack + i;
-          const nodeIdx2 = trackIdx * nodesPerTrack + i + 1;
-          const node1 = trackNodesRef.current[nodeIdx1];
-          const node2 = trackNodesRef.current[nodeIdx2];
-          
-          if (node1 && node2) {
-            ctx.strokeStyle = `${trackColor.glow}0.2)`;
-            ctx.lineWidth = 1;
-            ctx.setLineDash([6, 6]);
-            ctx.lineDashOffset = -timeRef.current * 20;
-            ctx.beginPath();
-            ctx.moveTo(node1.x, node1.y);
-            ctx.lineTo(node2.x, node2.y);
-            ctx.stroke();
-            ctx.setLineDash([]);
-          }
-        }
-      }
-      
       animationRef.current = requestAnimationFrame(animate);
     };
 
@@ -681,33 +405,19 @@ export default function HeroCanvas() {
         particlesRef.current.forEach(p => {
           p.x = (p.x / prevW) * widthRef.current;
           p.y = (p.y / prevH) * heightRef.current;
-          if (p.orbitCenterX) p.orbitCenterX = (p.orbitCenterX / prevW) * widthRef.current;
-          if (p.orbitCenterY) p.orbitCenterY = (p.orbitCenterY / prevH) * heightRef.current;
-        });
-        trackNodesRef.current.forEach(n => {
-          n.x = (n.x / prevW) * widthRef.current;
-          n.y = (n.y / prevH) * heightRef.current;
+          p.targetX = (p.targetX / prevW) * widthRef.current;
+          p.targetY = (p.targetY / prevH) * heightRef.current;
         });
       }
     };
 
-    const handleMouseMove = (e: MouseEvent) => {
-      const rect = canvas.getBoundingClientRect();
-      setMousePos({
-        x: (e.clientX - rect.left) * dprRef.current,
-        y: (e.clientY - rect.top) * dprRef.current,
-      });
-    };
-
     window.addEventListener("resize", handleResize);
-    canvas.addEventListener("mousemove", handleMouseMove);
 
     return () => {
       window.removeEventListener("resize", handleResize);
-      canvas.removeEventListener("mousemove", handleMouseMove);
       if (animationRef.current) cancelAnimationFrame(animationRef.current);
     };
-  }, [mousePos]);
+  }, []);
 
   useEffect(() => {
     const timer = setTimeout(() => setIsVisible(true), 100);
@@ -717,9 +427,9 @@ export default function HeroCanvas() {
   return (
     <section className="relative min-h-[90vh] flex items-center justify-center pt-20 overflow-hidden" aria-labelledby="hero-title">
       <div className="absolute inset-0" aria-hidden="true">
-        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-background to-background opacity-60" />
-        <div className="absolute top-1/4 left-1/4 w-[600px] h-[600px] bg-mint/5 rounded-full blur-[200px] animate-pulse" style={{ animationDuration: "4s" }} />
-        <div className="absolute bottom-1/4 right-1/4 w-[500px] h-[500px] bg-amber/5 rounded-full blur-[200px] animate-pulse" style={{ animationDuration: "4s", animationDelay: "1s" }} />
+        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-background to-background opacity-70" />
+        <div className="absolute top-1/5 left-1/10 w-[500px] h-[500px] bg-indigo-600/5 rounded-full blur-[200px]" />
+        <div className="absolute bottom-1/5 right-1/8 w-[450px] h-[450px] bg-amber-600/5 rounded-full blur-[200px]" />
       </div>
 
       <div className="relative z-10 w-full max-w-7xl mx-auto px-6 lg:px-12 py-12">
@@ -728,21 +438,21 @@ export default function HeroCanvas() {
           transform: isVisible ? 'translateY(0)' : 'translateY(30px)', 
           transition: 'all 1s cubic-bezier(0.16, 1, 0.3, 1)' 
         }}>
-          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full glass border-mint/20 mb-6">
-            <span className="w-2 h-2 bg-mint rounded-full animate-pulse" aria-hidden="true" />
-            <span className="text-sm font-medium text-mint">Available for Enterprise Contracts · UTC+8</span>
+          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full glass border-indigo-500/20 mb-6">
+            <span className="w-2 h-2 bg-indigo-400 rounded-full" aria-hidden="true" />
+            <span className="text-sm font-medium text-indigo-400">Solving daily business operations</span>
           </div>
 
           <h1 id="hero-title" className="text-4xl sm:text-5xl lg:text-6xl xl:text-7xl font-bold tracking-tight leading-[1.02] text-white mb-6">
             Automation That Fixes
             <br />
-            <span className="text-gradient-mint">Revenue Operations</span>
+            <span className="text-gradient-mint">Daily Operations</span>
             <br />
             At The Source
           </h1>
 
           <p className="text-lg sm:text-xl lg:text-2xl text-muted max-w-3xl mx-auto mb-8 leading-relaxed">
-            I build fail-safe automation systems that eliminate manual lead processing, connect disconnected business applications, and ensure workflow failures never go unnoticed. Ten production-grade systems. Zero silent failures.
+            I build automation systems that eliminate manual data entry, reduce errors, free up staff time, and speed up repeat operations. Four production-grade GTM stages. Zero silent failures.
           </p>
 
           <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
@@ -765,14 +475,14 @@ export default function HeroCanvas() {
               <svg className="w-4 h-4 mr-2" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <polygon points="5 3 19 12 5 21 5 3" />
               </svg>
-              3-min Self-Intro Walkthrough
+              3-min Walkthrough
             </a>
           </div>
 
           <div className="flex flex-wrap items-center justify-center gap-5 mt-8 text-sm text-muted">
             <div className="flex items-center gap-1.5">
               <svg className="w-4 h-4 text-mint" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="20 6 9 17 4 12" /></svg>
-              <span>10 Independent Systems</span>
+              <span>10 Working Systems</span>
             </div>
             <div className="flex items-center gap-1.5">
               <svg className="w-4 h-4 text-mint" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="20 6 9 17 4 12" /></svg>
@@ -780,11 +490,11 @@ export default function HeroCanvas() {
             </div>
             <div className="flex items-center gap-1.5">
               <svg className="w-4 h-4 text-mint" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="20 6 9 17 4 12" /></svg>
-              <span>10 Loom Demonstrations</span>
+              <span>10 Loom Walkthroughs</span>
             </div>
             <div className="flex items-center gap-1.5">
               <svg className="w-4 h-4 text-mint" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="20 6 9 17 4 12" /></svg>
-              <span>3 Business Categories</span>
+              <span>4 GTM Stages</span>
             </div>
           </div>
         </div>
@@ -792,8 +502,8 @@ export default function HeroCanvas() {
         <div className="relative mt-12 h-[400px] sm:h-[480px] lg:h-[520px]">
           <canvas
             ref={canvasRef}
-            className="w-full h-full glass rounded-2xl border-mint/10"
-            aria-label="3D isometric GTM data automation pipeline: chaotic intake funnel → 3 parallel illuminated tracks → glowing server core"
+            className="w-full h-full glass rounded-2xl border-indigo-500/10"
+            aria-label="4-stage GTM data automation pipeline: INGEST → PROCESS → PERSIST → DELIVER"
             role="img"
           />
         </div>

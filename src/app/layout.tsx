@@ -16,8 +16,8 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "Kristian Jay Eñaga | GTM Automation Engineer",
-  description: "Unslop your GTM implementation. Build fail-safe automations that maximize revenue operations. Enterprise n8n workflows, multi-provider data waterfalls, and zero-silent-failure architectures.",
-  keywords: ["GTM Automation", "n8n", "Revenue Operations", "HubSpot", "CRM Integration", "Data Engineering", "Workflow Automation", "AI Enrichment"],
+  description: "I build automation systems that solve daily business problems — eliminating manual data entry, reducing errors, freeing up staff time, and speeding up repeat operations. Fail-safe n8n workflows, multi-provider data pipelines, and zero silent failures.",
+  keywords: ["GTM Automation", "n8n", "Business Process Automation", "HubSpot", "CRM Integration", "Data Engineering", "Workflow Automation", "AI Enrichment"],
   authors: [{ name: "Kristian Jay Eñaga" }],
   creator: "Kristian Jay Eñaga",
   publisher: "Kristian Jay Eñaga",
@@ -27,13 +27,13 @@ export const metadata: Metadata = {
     locale: "en_US",
     url: "https://kristianjayenaga.dev",
     title: "Kristian Jay Eñaga | GTM Automation Engineer",
-    description: "Unslop your GTM implementation. Build fail-safe automations that maximize revenue operations.",
+    description: "I build automation systems that solve daily business problems.",
     siteName: "Kristian Jay Eñaga",
   },
   twitter: {
     card: "summary_large_image",
     title: "Kristian Jay Eñaga | GTM Automation Engineer",
-    description: "Unslop your GTM implementation. Build fail-safe automations that maximize revenue operations.",
+    description: "I build automation systems that solve daily business problems.",
   },
   verification: {
     google: "google-site-verification-code",

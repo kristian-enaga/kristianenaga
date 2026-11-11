@@ -279,9 +279,10 @@ export default function ProjectSection() {
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8" role="list">
-          {projectsData.map((project) => {
+          {projectsData.map((project, index) => {
             const color = colorObj(project.category).main;
             const second = colorObj(project.category).second;
+            const delay = (index + 1) * 100;
             return (
               <article
                 key={project.id}
@@ -294,8 +295,11 @@ export default function ProjectSection() {
                   e.stopPropagation();
                   openProject(project);
                 }}
-                className="relative rounded-2xl p-5 lg:p-6 overflow-hidden transition-all duration-500 ease-out cursor-pointer group"
+                className="relative rounded-2xl p-5 lg:p-6 overflow-hidden transition-all duration-500 ease-out cursor-pointer group animate-fade-in-up"
                 style={{
+                  animationDelay: `${delay}ms`,
+                  animationDuration: '600ms',
+                  animationFillMode: 'both',
                   border: `1px solid ${color}30`,
                   background: `linear-gradient(145deg, ${color}15, ${color}08, ${second}05)`,
                   boxShadow: `0 0 20px ${color}10, inset 0 1px 0 rgba(255,255,255,0.06)`,

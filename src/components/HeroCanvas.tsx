@@ -1,14 +1,14 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useCallback, useMemo } from "react";
 
 const STAGE_NAMES = ["INGEST", "PROCESS", "PERSIST", "DELIVER"] as const;
 
 const STAGE_COLORS = {
-  INGEST: { main: "#6366f1", second: "#8b5cf6", glow: "rgba(99, 102, 241," },
-  PROCESS: { main: "#22c55e", second: "#86efac", glow: "rgba(34, 197, 94," },
-  PERSIST: { main: "#dc2626", second: "#f97316", glow: "rgba(220, 38, 38," },
-  DELIVER: { main: "#f59e0b", second: "#fef3c7", glow: "rgba(245, 158, 11," },
+  INGEST: { main: "#dc2626", second: "#ef4444", glow: "rgba(220, 38, 38," },
+  PROCESS: { main: "#f97316", second: "#fb923c", glow: "rgba(249, 115, 22," },
+  PERSIST: { main: "#f59e0b", second: "#fbbf24", glow: "rgba(245, 158, 11," },
+  DELIVER: { main: "#e11d48", second: "#f43f5e", glow: "rgba(225, 29, 72," },
 };
 
 interface Particle {
@@ -59,6 +59,11 @@ interface HealthStatus {
   message: string;
 }
 
+const MAX_PARTICLES = 50;
+const PARTICLES_PER_STAGE = 8;
+const PACKETS_PER_CONNECTION = 3;
+const STAGES = 4;
+
 export default function HeroCanvas() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const animationRef = useRef<number | null>(null);
@@ -80,41 +85,47 @@ export default function HeroCanvas() {
   const widthRef = useRef(0);
   const heightRef = useRef(0);
   const dprRef = useRef(1);
+  const initializedRef = useRef(false);
 
-  // Compute metrics and health whenever sliders change
-  useEffect(() => {
-    const trafficLoad = sliders.trafficLoad / 100;
-    const processingEfficiency = sliders.processingEfficiency / 100;
-    const deliverySpeed = sliders.deliverySpeed / 100;
-
-    const ingestLag = (trafficLoad * 0.2) + 0.4;
-    const processBacklog = Math.max(0, Math.floor((sliders.trafficLoad - sliders.processingEfficiency) * 0.5));
-    const deliverOutflow = Math.max(0, parseFloat(((sliders.deliverySpeed * 0.6) - (processBacklog * 0.8)).toFixed(1)));
-
-    setMetrics({
-      ingestLag: parseFloat(ingestLag.toFixed(1)),
+  // Memoized metric computation - pure function, no side effects
+  const computeMetrics = useCallback((s: SliderState): Metrics => {
+    const trafficLoad = s.trafficLoad / 100;
+    const processBacklog = Math.max(0, Math.floor((s.trafficLoad - s.processingEfficiency) * 0.5));
+    const deliverOutflow = Math.max(0, parseFloat(((s.deliverySpeed * 0.6) - (processBacklog * 0.8)).toFixed(1)));
+    
+    return {
+      ingestLag: parseFloat(((trafficLoad * 0.2) + 0.4).toFixed(1)),
       processBacklog,
       deliverOutflow,
-    });
+    };
+  }, []);
 
-    // Health detection
-    if (sliders.processingEfficiency < 40 || processBacklog > 5) {
-      setHealth({
+  // Memoized health computation - pure function
+  const computeHealth = useCallback((s: SliderState, backlog: number): HealthStatus => {
+    if (s.processingEfficiency < 40 || backlog > 5) {
+      return {
         type: "critical",
         message: "CRITICAL BOTTLENECK DETECTED: Low Processing Efficiency is creating an active database backlog pileup!",
-      });
-    } else if (sliders.trafficLoad < 25 && processBacklog === 0) {
-      setHealth({
+      };
+    } else if (s.trafficLoad < 25 && backlog === 0) {
+      return {
         type: "idle",
         message: "System is currently idle. Increase Traffic Load to test ingestion data parsing streams.",
-      });
+      };
     } else {
-      setHealth({
+      return {
         type: "balanced",
         message: "System flow is balanced perfectly. Tweak parameters to stress test systemic failure thresholds.",
-      });
+      };
     }
-  }, [sliders]);
+  }, []);
+
+  // Update metrics and health whenever sliders change
+  useEffect(() => {
+    const newMetrics = computeMetrics(sliders);
+    setMetrics(newMetrics);
+    setHealth(computeHealth(sliders, newMetrics.processBacklog));
+  }, [sliders, computeMetrics, computeHealth]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -134,11 +145,11 @@ export default function HeroCanvas() {
       canvas.style.width = `${widthRef.current}px`;
       canvas.style.height = `${heightRef.current}px`;
       ctx.setTransform(dprRef.current, 0, 0, dprRef.current, 0, 0);
-      initScene();
+      if (!initializedRef.current) {
+        initScene();
+        initializedRef.current = true;
+      }
     };
-
-    const MAX_PARTICLES = 60;
-    const STAGES = 4;
 
     const initScene = () => {
       const w = widthRef.current;
@@ -149,14 +160,13 @@ export default function HeroCanvas() {
       const stageX = [w * 0.11, w * 0.33, w * 0.55, w * 0.77];
       const stageY = h * 0.5;
 
-      // Create larger 3D boxes for each stage
+      // Create 3D boxes for each stage
       for (let s = 0; s < STAGES; s++) {
         const colorObj = STAGE_COLORS[STAGE_NAMES[s]];
         const boxW = s === 3 ? 130 : 90;
         const boxH = s === 3 ? 65 : 45;
         const depth = boxW * 0.35;
 
-        // Front face (main box)
         boxesRef.current.push({
           x: stageX[s],
           y: stageY,
@@ -170,7 +180,6 @@ export default function HeroCanvas() {
           pulse: Math.random() * Math.PI * 2,
         });
 
-        // Right side face (3D depth)
         boxesRef.current.push({
           x: stageX[s] + boxW * 0.1,
           y: stageY - boxH * 0.25,
@@ -184,7 +193,6 @@ export default function HeroCanvas() {
           pulse: Math.random() * Math.PI * 2,
         });
 
-        // Top face (3D depth)
         boxesRef.current.push({
           x: stageX[s] - boxW * 0.05,
           y: stageY - boxH * 0.35,
@@ -198,7 +206,6 @@ export default function HeroCanvas() {
           pulse: Math.random() * Math.PI * 2,
         });
 
-        // Left side accent
         boxesRef.current.push({
           x: stageX[s] - depth * 0.15,
           y: stageY - boxH * 0.15,
@@ -213,12 +220,12 @@ export default function HeroCanvas() {
         });
       }
 
-      // Create particles that flow through stages
-      const particlesPerStage = 12;
+      // Create orbit particles - CAP at MAX_PARTICLES
       for (let s = 0; s < STAGES; s++) {
         const colorObj = STAGE_COLORS[STAGE_NAMES[s]];
-        for (let i = 0; i < particlesPerStage; i++) {
-          const angle = (Math.PI * 2 * i) / particlesPerStage;
+        for (let i = 0; i < PARTICLES_PER_STAGE; i++) {
+          if (particlesRef.current.length >= MAX_PARTICLES) break;
+          const angle = (Math.PI * 2 * i) / PARTICLES_PER_STAGE;
           const r = 35 + Math.random() * 20;
           
           particlesRef.current.push({
@@ -241,11 +248,12 @@ export default function HeroCanvas() {
         }
       }
 
-      // Flowing packets between stages
+      // Flowing packets between stages - CAP at MAX_PARTICLES
       for (let s = 0; s < STAGES - 1; s++) {
         const startColor = STAGE_COLORS[STAGE_NAMES[s]];
-        for (let i = 0; i < 6; i++) {
-          const progress = i / 6;
+        for (let i = 0; i < PACKETS_PER_CONNECTION; i++) {
+          if (particlesRef.current.length >= MAX_PARTICLES) break;
+          const progress = i / PACKETS_PER_CONNECTION;
           particlesRef.current.push({
             x: stageX[s] + (stageX[s + 1] - stageX[s]) * progress,
             y: stageY + (Math.random() - 0.5) * 12,
@@ -267,7 +275,6 @@ export default function HeroCanvas() {
       }
     };
 
-    // Draw 3D isometric box with enhanced depth
     const drawIsometricBox = (
       ctx: CanvasRenderingContext2D,
       box: BoxNode,
@@ -278,7 +285,7 @@ export default function HeroCanvas() {
       ctx.save();
       ctx.globalAlpha = opacity;
       
-      // Left face (darker side)
+      // Left face
       const leftGrad = ctx.createLinearGradient(
         x - depth * 0.3, y - height / 2,
         x, y + height / 2
@@ -327,7 +334,7 @@ export default function HeroCanvas() {
       ctx.closePath();
       ctx.fill();
 
-      // Front face (brightest)
+      // Front face
       const frontGrad = ctx.createLinearGradient(
         x, y - height / 2,
         x + width, y + height / 2
@@ -345,7 +352,7 @@ export default function HeroCanvas() {
       ctx.closePath();
       ctx.fill();
 
-      // Glowing border on front
+      // Glowing border
       const pulseScale = 1 + Math.sin(timeRef.current * 2 + box.stage) * 0.03;
       ctx.strokeStyle = `${colorObj.glow}${Math.floor(opacity * 220).toString(16).padStart(2, '0')})`;
       ctx.lineWidth = 2;
@@ -360,7 +367,7 @@ export default function HeroCanvas() {
       ctx.stroke();
       ctx.shadowBlur = 0;
 
-      // Stage label on front face
+      // Stage label
       ctx.font = "bold 12px 'Geist Mono', monospace";
       ctx.fillStyle = "#ffffff";
       ctx.textAlign = "center";
@@ -369,7 +376,6 @@ export default function HeroCanvas() {
       ctx.fillText(STAGE_NAMES[box.stage], x + width / 2, y + 4);
       ctx.shadowBlur = 0;
 
-      // Sub-label
       const subLabels = {
         INGEST: "Raw Data Intake",
         PROCESS: "AI Processing",
@@ -391,7 +397,6 @@ export default function HeroCanvas() {
         const colorObj = STAGE_COLORS[STAGE_NAMES[i]];
         const nextColorObj = STAGE_COLORS[STAGE_NAMES[i + 1]];
         
-        // Gradient connection line
         const grad = ctx.createLinearGradient(stageX[i], stageY, stageX[i + 1], stageY);
         grad.addColorStop(0, `${colorObj.glow}0.3)`);
         grad.addColorStop(0.5, `${colorObj.glow}0.5)`);
@@ -423,12 +428,11 @@ export default function HeroCanvas() {
       const w = widthRef.current;
       const h = heightRef.current;
       
-      // Clear with dark background
       ctx.fillStyle = "#020617";
       ctx.fillRect(0, 0, w, h);
       
-      // Isometric grid background
-      ctx.strokeStyle = "rgba(99, 102, 241, 0.03)";
+      // Grid background
+      ctx.strokeStyle = "rgba(220, 38, 38, 0.03)";
       ctx.lineWidth = 1;
       const gridSize = 60;
       for (let x = 0; x <= w; x += gridSize) {
@@ -444,13 +448,10 @@ export default function HeroCanvas() {
         ctx.stroke();
       }
       
-      // Connections between stages
       drawConnections(ctx, w, h);
       
-      // Sort boxes by depth for proper 3D rendering
       const sortedBoxes = [...boxesRef.current].sort((a, b) => a.z - b.z);
       
-      // Draw all boxes
       sortedBoxes.forEach((box) => {
         const colorObj = STAGE_COLORS[STAGE_NAMES[box.stage]];
         box.pulse += 0.015;
@@ -464,14 +465,17 @@ export default function HeroCanvas() {
         }, colorObj);
       });
       
-      // Update and draw particles
+      // Update particles - SPEED BOUND TO SLIDERS
       const newParticles: Particle[] = [];
+      const trafficMultiplier = sliders.trafficLoad / 50;
+      const deliveryMultiplier = sliders.deliverySpeed / 50;
+      const effMultiplier = Math.max(0.3, sliders.processingEfficiency / 50);
       
       particlesRef.current.forEach((p) => {
         if (p.type === "orbit") {
           const stageX = [w * 0.11, w * 0.33, w * 0.55, w * 0.77][p.stage];
           const stageY = h * 0.5;
-          const angle = timeRef.current * (0.4 + p.stage * 0.08) + p.life * 0.04;
+          const angle = timeRef.current * (0.4 + p.stage * 0.08) * trafficMultiplier + p.life * 0.04;
           const r = 40 + Math.sin(timeRef.current * 0.4 + p.life * 0.08) * 8;
           
           p.x = stageX + Math.cos(angle) * r;
@@ -483,21 +487,17 @@ export default function HeroCanvas() {
           newParticles.push(p);
         }
         else if (p.type === "packet") {
-          // Flow between stages - speed affected by traffic load
-          const speedMultiplier = sliders.trafficLoad / 50;
+          // Speed scales with Traffic Load AND Delivery Speed
+          const speedMultiplier = (trafficMultiplier + deliveryMultiplier) / 2;
           p.x += p.vx * speedMultiplier;
           
-          // Reset when past next stage
           if (p.x > p.targetX + 30) {
             p.x = [w * 0.11, w * 0.33, w * 0.55][p.stage] - 30;
             p.life = 0;
           }
           
-          // Gentle vertical bobbing
           p.y = p.targetY + Math.sin(timeRef.current * 2.5 + p.life * 0.1) * 4;
           
-          // Pulse opacity based on efficiency
-          const effMultiplier = sliders.processingEfficiency / 50;
           p.opacity = 0.4 + 0.5 * Math.abs(Math.sin(timeRef.current * 3 + p.life * 0.1)) * effMultiplier;
           
           newParticles.push(p);
@@ -506,11 +506,10 @@ export default function HeroCanvas() {
       
       particlesRef.current = newParticles;
       
-      // Draw particles with glow
+      // Draw particles
       newParticles.forEach((p) => {
         const r = p.radius;
         
-        // Outer glow for packets
         if (p.type === "packet") {
           const grad = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, r * 6);
           grad.addColorStop(0, `${p.color}${Math.floor(p.opacity * 180).toString(16).padStart(2, '0')}`);
@@ -521,7 +520,6 @@ export default function HeroCanvas() {
           ctx.fill();
         }
         
-        // Core
         const coreGrad = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, r);
         coreGrad.addColorStop(0, `${p.color}${Math.floor(p.opacity * 255).toString(16).padStart(2, '0')}`);
         coreGrad.addColorStop(1, `${p.color}00`);
@@ -561,26 +559,25 @@ export default function HeroCanvas() {
       window.removeEventListener("resize", handleResize);
       if (animationRef.current) cancelAnimationFrame(animationRef.current);
     };
-  }, [sliders]);
+  }, [sliders.trafficLoad, sliders.processingEfficiency, sliders.deliverySpeed]);
 
   useEffect(() => {
     const timer = setTimeout(() => setIsVisible(true), 100);
     return () => clearTimeout(timer);
   }, []);
 
-  // Slider handlers
   const handleTrafficLoad = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const val = Math.max(10, Math.min(100, parseInt(e.target.value)));
+    const val = Math.max(10, Math.min(100, parseInt(e.target.value) || 50));
     setSliders(prev => ({ ...prev, trafficLoad: val }));
   };
 
   const handleProcessingEfficiency = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const val = Math.max(10, Math.min(100, parseInt(e.target.value)));
+    const val = Math.max(10, Math.min(100, parseInt(e.target.value) || 39));
     setSliders(prev => ({ ...prev, processingEfficiency: val }));
   };
 
   const handleDeliverySpeed = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const val = Math.max(10, Math.min(100, parseInt(e.target.value)));
+    const val = Math.max(10, Math.min(100, parseInt(e.target.value) || 50));
     setSliders(prev => ({ ...prev, deliverySpeed: val }));
   };
 
@@ -588,20 +585,19 @@ export default function HeroCanvas() {
     <section className="relative min-h-[90vh] flex flex-col pt-20 overflow-hidden" aria-labelledby="hero-title">
       <div className="absolute inset-0" aria-hidden="true">
         <div className="absolute inset-0 bg-gradient-to-b from-transparent via-background to-background opacity-70" />
-        <div className="absolute top-1/5 left-1/10 w-[500px] h-[500px] bg-indigo-600/5 rounded-full blur-[200px]" />
+        <div className="absolute top-1/5 left-1/10 w-[500px] h-[500px] bg-red-600/5 rounded-full blur-[200px]" />
         <div className="absolute bottom-1/5 right-1/8 w-[450px] h-[450px] bg-amber-600/5 rounded-full blur-[200px]" />
       </div>
 
       <div className="relative z-10 w-full max-w-7xl mx-auto px-6 lg:px-12 py-12 flex flex-col flex-1">
-        {/* Hero Header */}
         <div className="text-center mb-8" style={{ 
           opacity: isVisible ? 1 : 0, 
           transform: isVisible ? 'translateY(0)' : 'translateY(30px)', 
           transition: 'all 1s cubic-bezier(0.16, 1, 0.3, 1)' 
         }}>
-          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full glass border-indigo-500/20 mb-6">
-            <span className="w-2 h-2 bg-indigo-400 rounded-full" aria-hidden="true" />
-            <span className="text-sm font-medium text-indigo-400">Solving daily business operations</span>
+          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full glass border-red-500/20 mb-6">
+            <span className="w-2 h-2 bg-red-400 rounded-full" aria-hidden="true" />
+            <span className="text-sm font-medium text-red-400">Solving daily business operations</span>
           </div>
 
           <h1 id="hero-title" className="text-4xl sm:text-5xl lg:text-6xl xl:text-7xl font-bold tracking-tight leading-[1.02] text-white mb-6">
@@ -617,7 +613,6 @@ export default function HeroCanvas() {
           </p>
         </div>
 
-        {/* Real-time Metrics Panels */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 lg:gap-6 mb-8" style={{ 
           opacity: isVisible ? 1 : 0, 
           transform: isVisible ? 'translateY(0)' : 'translateY(20px)', 
@@ -625,11 +620,11 @@ export default function HeroCanvas() {
         }}>
           <div className="glass rounded-2xl p-5 lg:p-6 border border-white/10 relative overflow-hidden">
             <div className="absolute inset-0 pointer-events-none" aria-hidden="true">
-              <div className="absolute top-0 right-0 w-24 h-24 rounded-full blur-xl opacity-20" style={{ background: "#6366f1" }} />
+              <div className="absolute top-0 right-0 w-24 h-24 rounded-full blur-xl opacity-20" style={{ background: "#dc2626" }} />
             </div>
             <div className="relative z-10">
-              <div className="flex items-center gap-2 text-xs font-medium text-indigo-400 uppercase tracking-wider mb-2">
-                <span className="w-1.5 h-1.5 bg-indigo-400 rounded-full" aria-hidden="true" />
+              <div className="flex items-center gap-2 text-xs font-medium text-red-400 uppercase tracking-wider mb-2">
+                <span className="w-1.5 h-1.5 bg-red-400 rounded-full" aria-hidden="true" />
                 INGEST LAG
               </div>
               <div className="text-3xl lg:text-4xl font-bold text-white font-mono">{metrics.ingestLag.toFixed(1)}</div>
@@ -639,11 +634,11 @@ export default function HeroCanvas() {
 
           <div className="glass rounded-2xl p-5 lg:p-6 border border-white/10 relative overflow-hidden">
             <div className="absolute inset-0 pointer-events-none" aria-hidden="true">
-              <div className="absolute top-0 right-0 w-24 h-24 rounded-full blur-xl opacity-20" style={{ background: "#dc2626" }} />
+              <div className="absolute top-0 right-0 w-24 h-24 rounded-full blur-xl opacity-20" style={{ background: "#f97316" }} />
             </div>
             <div className="relative z-10">
-              <div className="flex items-center gap-2 text-xs font-medium text-red-400 uppercase tracking-wider mb-2">
-                <span className="w-1.5 h-1.5 bg-red-400 rounded-full" aria-hidden="true" />
+              <div className="flex items-center gap-2 text-xs font-medium text-orange-400 uppercase tracking-wider mb-2">
+                <span className="w-1.5 h-1.5 bg-orange-400 rounded-full" aria-hidden="true" />
                 PROCESS BACKLOG
               </div>
               <div className="text-3xl lg:text-4xl font-bold text-white font-mono">{metrics.processBacklog}</div>
@@ -666,7 +661,6 @@ export default function HeroCanvas() {
           </div>
         </div>
 
-        {/* Pipeline Canvas */}
         <div className="relative flex-1 min-h-[400px] sm:min-h-[480px] lg:min-h-[520px] mb-8" style={{ 
           opacity: isVisible ? 1 : 0, 
           transform: isVisible ? 'translateY(0)' : 'translateY(20px)', 
@@ -674,13 +668,12 @@ export default function HeroCanvas() {
         }}>
           <canvas
             ref={canvasRef}
-            className="w-full h-full glass rounded-2xl border-indigo-500/10"
+            className="w-full h-full glass rounded-2xl border-red-500/10"
             aria-label="4-stage GTM data automation pipeline: INGEST → PROCESS → PERSIST → DELIVER"
             role="img"
           />
         </div>
 
-        {/* Interactive Slider Dashboard */}
         <div className="glass rounded-2xl p-6 lg:p-8 border border-white/10 mb-8" style={{ 
           opacity: isVisible ? 1 : 0, 
           transform: isVisible ? 'translateY(0)' : 'translateY(20px)', 
@@ -689,20 +682,19 @@ export default function HeroCanvas() {
           <div className="flex items-center justify-between mb-6">
             <h3 className="text-lg lg:text-xl font-bold text-white">Pipeline Control Dashboard</h3>
             <div className="flex items-center gap-3 text-xs">
-              <span className="px-2 py-1 rounded-full bg-indigo-500/20 text-indigo-400">LIVE</span>
+              <span className="px-2 py-1 rounded-full bg-red-500/20 text-red-400">LIVE</span>
               <span className="px-2 py-1 rounded-full bg-green-500/20 text-green-400">REACTIVE</span>
             </div>
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8">
-            {/* Traffic Load Slider */}
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <label htmlFor="traffic-load" className="flex items-center gap-2 text-sm font-medium text-white">
-                  <span className="w-2 h-2 bg-indigo-400 rounded-full" aria-hidden="true" />
+                  <span className="w-2 h-2 bg-red-400 rounded-full" aria-hidden="true" />
                   Traffic Load
                 </label>
-                <span className="text-lg font-mono font-bold text-indigo-300 bg-indigo-500/10 px-3 py-1 rounded-lg">
+                <span className="text-lg font-mono font-bold text-red-300 bg-red-500/10 px-3 py-1 rounded-lg">
                   {sliders.trafficLoad}%
                 </span>
               </div>
@@ -714,9 +706,9 @@ export default function HeroCanvas() {
                   max="100"
                   value={sliders.trafficLoad}
                   onChange={handleTrafficLoad}
-                  className="w-full h-2 appearance-none bg-white/5 rounded-full cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-5 [&::-webkit-slider-thumb]:h-5 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-indigo-400 [&::-webkit-slider-thumb]:border-2 [&::-webkit-slider-thumb]:border-white [&::-webkit-slider-thumb]:shadow-lg [&::-moz-range-thumb]:w-5 [&::-moz-range-thumb]:h-5 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:bg-indigo-400 [&::-moz-range-thumb]:border-2 [&::-moz-range-thumb]:border-white"
+                  className="w-full h-2 appearance-none bg-white/5 rounded-full cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-5 [&::-webkit-slider-thumb]:h-5 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-red-400 [&::-webkit-slider-thumb]:border-2 [&::-webkit-slider-thumb]:border-white [&::-webkit-slider-thumb]:shadow-lg [&::-moz-range-thumb]:w-5 [&::-moz-range-thumb]:h-5 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:bg-red-400 [&::-moz-range-thumb]:border-2 [&::-moz-range-thumb]:border-white"
                   style={{
-                    background: `linear-gradient(90deg, #6366f1 ${sliders.trafficLoad}%, rgba(255,255,255,0.05) ${sliders.trafficLoad}%)`,
+                    background: `linear-gradient(90deg, #dc2626 ${sliders.trafficLoad}%, rgba(255,255,255,0.05) ${sliders.trafficLoad}%)`,
                   }}
                   aria-label="Traffic Load"
                 />
@@ -728,14 +720,13 @@ export default function HeroCanvas() {
               <p className="text-xs text-muted">Ingestion rate of raw lead data</p>
             </div>
 
-            {/* Processing Efficiency Slider */}
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <label htmlFor="processing-efficiency" className="flex items-center gap-2 text-sm font-medium text-white">
-                  <span className="w-2 h-2 bg-red-400 rounded-full" aria-hidden="true" />
+                  <span className="w-2 h-2 bg-orange-400 rounded-full" aria-hidden="true" />
                   Processing Efficiency
                 </label>
-                <span className="text-lg font-mono font-bold text-red-300 bg-red-500/10 px-3 py-1 rounded-lg">
+                <span className="text-lg font-mono font-bold text-orange-300 bg-orange-500/10 px-3 py-1 rounded-lg">
                   {sliders.processingEfficiency}%
                 </span>
               </div>
@@ -747,9 +738,9 @@ export default function HeroCanvas() {
                   max="100"
                   value={sliders.processingEfficiency}
                   onChange={handleProcessingEfficiency}
-                  className="w-full h-2 appearance-none bg-white/5 rounded-full cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-5 [&::-webkit-slider-thumb]:h-5 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-red-400 [&::-webkit-slider-thumb]:border-2 [&::-webkit-slider-thumb]:border-white [&::-webkit-slider-thumb]:shadow-lg [&::-moz-range-thumb]:w-5 [&::-moz-range-thumb]:h-5 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:bg-red-400 [&::-moz-range-thumb]:border-2 [&::-moz-range-thumb]:border-white"
+                  className="w-full h-2 appearance-none bg-white/5 rounded-full cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-5 [&::-webkit-slider-thumb]:h-5 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-orange-400 [&::-webkit-slider-thumb]:border-2 [&::-webkit-slider-thumb]:border-white [&::-webkit-slider-thumb]:shadow-lg [&::-moz-range-thumb]:w-5 [&::-moz-range-thumb]:h-5 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:bg-orange-400 [&::-moz-range-thumb]:border-2 [&::-moz-range-thumb]:border-white"
                   style={{
-                    background: `linear-gradient(90deg, #dc2626 ${sliders.processingEfficiency}%, rgba(255,255,255,0.05) ${sliders.processingEfficiency}%)`,
+                    background: `linear-gradient(90deg, #f97316 ${sliders.processingEfficiency}%, rgba(255,255,255,0.05) ${sliders.processingEfficiency}%)`,
                   }}
                   aria-label="Processing Efficiency"
                 />
@@ -761,7 +752,6 @@ export default function HeroCanvas() {
               <p className="text-xs text-muted">AI processing throughput capacity</p>
             </div>
 
-            {/* Delivery Speed Slider */}
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <label htmlFor="delivery-speed" className="flex items-center gap-2 text-sm font-medium text-white">
@@ -796,12 +786,11 @@ export default function HeroCanvas() {
           </div>
         </div>
 
-        {/* System Health Status Bar */}
-        <div className={`relative glass rounded-2xl p-4 lg:p-6 border mb-8 overflow-hidden ${
+        <div className={`relative glass rounded-2xl p-4 lg:p-6 border mb-8 overflow-hidden transition-all duration-500 ${
           health.type === "critical" ? "border-red-500/40 bg-red-500/5" :
           health.type === "idle" ? "border-slate-500/40 bg-slate-500/5" :
           "border-amber-500/40 bg-amber-500/5"
-        } transition-all duration-500`} style={{ 
+        }`} style={{ 
           opacity: isVisible ? 1 : 0, 
           transform: isVisible ? 'translateY(0)' : 'translateY(20px)', 
           transition: 'all 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.4s' 
@@ -840,7 +829,6 @@ export default function HeroCanvas() {
           </div>
         </div>
 
-        {/* CTA Buttons */}
         <div className="flex flex-col sm:flex-row items-center justify-center gap-3" style={{ 
           opacity: isVisible ? 1 : 0, 
           transform: isVisible ? 'translateY(0)' : 'translateY(20px)', 
@@ -871,19 +859,19 @@ export default function HeroCanvas() {
 
         <div className="flex flex-wrap items-center justify-center gap-5 mt-8 text-sm text-muted">
           <div className="flex items-center gap-1.5">
-            <svg className="w-4 h-4 text-mint" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="20 6 9 17 4 12" /></svg>
+            <svg className="w-4 h-4 text-red-400" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="20 6 9 17 4 12" /></svg>
             <span>10 Working Systems</span>
           </div>
           <div className="flex items-center gap-1.5">
-            <svg className="w-4 h-4 text-mint" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="20 6 9 17 4 12" /></svg>
+            <svg className="w-4 h-4 text-red-400" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="20 6 9 17 4 12" /></svg>
             <span>10 GitHub Repositories</span>
           </div>
           <div className="flex items-center gap-1.5">
-            <svg className="w-4 h-4 text-mint" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="20 6 9 17 4 12" /></svg>
+            <svg className="w-4 h-4 text-red-400" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="20 6 9 17 4 12" /></svg>
             <span>10 Loom Walkthroughs</span>
           </div>
           <div className="flex items-center gap-1.5">
-            <svg className="w-4 h-4 text-mint" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="20 6 9 17 4 12" /></svg>
+            <svg className="w-4 h-4 text-red-400" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="20 6 9 17 4 12" /></svg>
             <span>4 GTM Stages</span>
           </div>
         </div>

@@ -12,17 +12,20 @@ interface Spark {
   color: string;
   life: number;
   maxLife: number;
-  type: string; // 'trail' or 'spark'
+  hue: number;
+  colorPhase: number;
 }
 
-const COLORS = [
-  "#06b6d4", // cyan
-  "#22c55e", // green
-  "#a855f7", // purple
-  "#f59e0b", // amber
-  "#6366f1", // indigo
-  "#00ff87", // mint
+const NEON_COLORS = [
+  { hue: 0, name: "fiery red" },      // #ff1a1a
+  { hue: 20, name: "glowing orange" }, // #ff6b00
+  { hue: 30, name: "bright gold" },    // #ffd700
+  { hue: 330, name: "hot pink" },      // #ff006e
+  { hue: 350, name: "electric red" },  // #ff1a3a
+  { hue: 45, name: "solar yellow" },   // #fff01f
 ];
+
+const MAX_SPARKS = 120;
 
 export default function SparkTrail() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -33,6 +36,7 @@ export default function SparkTrail() {
   const widthRef = useRef(0);
   const heightRef = useRef(0);
   const dprRef = useRef(1);
+  const colorCycleRef = useRef(0);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -52,89 +56,93 @@ export default function SparkTrail() {
       ctx.setTransform(dprRef.current, 0, 0, dprRef.current, 0, 0);
     };
 
-    const MAX_SPARKS = 120;
-
-    const initScene = () => {
-      sparksRef.current = [];
-      // Initial random sparks across screen
-      for (let i = 0; i < MAX_SPARKS / 2; i++) {
-        sparksRef.current.push({
-          x: Math.random() * widthRef.current,
-          y: Math.random() * heightRef.current,
-          vx: (Math.random() - 0.5) * 0.5,
-          vy: (Math.random() - 0.5) * 0.5,
-          radius: 0.5 + Math.random() * 1.5,
-          opacity: 0,
-          color: COLORS[Math.floor(Math.random() * COLORS.length)],
-          life: 0,
-          maxLife: 100 + Math.random() * 200,
-          type: "trail",
-        });
-      }
-    };
-
-    const addTrailSpark = (x: number, y: number) => {
-      // Add a few sparks at mouse position
-      for (let i = 0; i < 2; i++) {
+    const addSpark = (x: number, y: number) => {
+      // Add burst of sparks at position
+      const count = 3 + Math.floor(Math.random() * 3);
+      for (let i = 0; i < count; i++) {
         if (sparksRef.current.length >= MAX_SPARKS) break;
+        
+        const colorIndex = Math.floor(Math.random() * NEON_COLORS.length);
+        const baseHue = NEON_COLORS[colorIndex].hue;
+        
         sparksRef.current.push({
           x,
           y,
-          vx: (Math.random() - 0.5) * 1,
-          vy: (Math.random() - 0.5) * 1,
-          radius: 1 + Math.random() * 2,
-          opacity: 0.8,
-          color: COLORS[Math.floor(Math.random() * COLORS.length)],
+          vx: (Math.random() - 0.5) * 4,
+          vy: (Math.random() - 0.5) * 4 - 1,
+          radius: 1.5 + Math.random() * 2.5,
+          opacity: 0.9 + Math.random() * 0.1,
+          color: `hsl(${baseHue}, 100%, 60%)`,
           life: 0,
-          maxLife: 60 + Math.random() * 60,
-          type: "trail",
+          maxLife: 40 + Math.random() * 40,
+          hue: baseHue,
+          colorPhase: Math.random() * Math.PI * 2,
         });
       }
     };
 
-    const drawGlowCircle = (
+    const drawGlowParticle = (
       ctx: CanvasRenderingContext2D,
-      x: number,
-      y: number,
-      radius: number,
-      color: string,
-      opacity: number
+      spark: Spark
     ) => {
-      // Inner bright core
-      const innerGrad = ctx.createRadialGradient(x, y, 0, x, y, radius);
-      innerGrad.addColorStop(0, `${color}${Math.floor(opacity * 255).toString(16).padStart(2, '0')}`);
-      innerGrad.addColorStop(0.5, `${color}${Math.floor(opacity * 100).toString(16).padStart(2, '0')}`);
-      innerGrad.addColorStop(1, `${color}00`);
-      ctx.fillStyle = innerGrad;
-      ctx.beginPath();
-      ctx.arc(x, y, radius, 0, Math.PI * 2);
-      ctx.fill();
-
-      // Outer bloom (dual-circle method - lighter outer ring)
-      const outerRadius = radius * 3;
-      const outerGrad = ctx.createRadialGradient(x, y, radius, x, y, outerRadius);
-      outerGrad.addColorStop(0, `${color}${Math.floor(opacity * 60).toString(16).padStart(2, '0')}`);
-      outerGrad.addColorStop(1, `${color}00`);
+      const { x, y, radius, opacity, hue, colorPhase, life } = spark;
+      
+      // Color cycling animation
+      const cycleSpeed = 0.05;
+      const currentHue = (hue + Math.sin(timeRef.current * cycleSpeed + colorPhase) * 15 + 360) % 360;
+      const saturatedColor = `hsl(${currentHue}, 100%, 60%)`;
+      const brightColor = `hsl(${currentHue}, 100%, 75%)`;
+      const whiteColor = `hsl(${currentHue}, 100%, 90%)`;
+      
+      // Outer glow bloom (dual-layer)
+      const outerRadius = radius * 6;
+      const outerGrad = ctx.createRadialGradient(x, y, 0, x, y, outerRadius);
+      outerGrad.addColorStop(0, `${saturatedColor}${Math.floor(opacity * 80).toString(16).padStart(2, '0')}`);
+      outerGrad.addColorStop(0.5, `${brightColor}${Math.floor(opacity * 30).toString(16).padStart(2, '0')}`);
+      outerGrad.addColorStop(1, `${saturatedColor}00`);
       ctx.fillStyle = outerGrad;
       ctx.beginPath();
       ctx.arc(x, y, outerRadius, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Middle glow
+      const midRadius = radius * 3;
+      const midGrad = ctx.createRadialGradient(x, y, 0, x, y, midRadius);
+      midGrad.addColorStop(0, `${brightColor}${Math.floor(opacity * 150).toString(16).padStart(2, '0')}`);
+      midGrad.addColorStop(0.5, `${saturatedColor}${Math.floor(opacity * 80).toString(16).padStart(2, '0')}`);
+      midGrad.addColorStop(1, `${saturatedColor}00`);
+      ctx.fillStyle = midGrad;
+      ctx.beginPath();
+      ctx.arc(x, y, midRadius, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Core - bright center
+      const coreGrad = ctx.createRadialGradient(x, y, 0, x, y, radius);
+      coreGrad.addColorStop(0, `${whiteColor}${Math.floor(opacity * 255).toString(16).padStart(2, '0')}`);
+      coreGrad.addColorStop(0.3, `${brightColor}${Math.floor(opacity * 255).toString(16).padStart(2, '0')}`);
+      coreGrad.addColorStop(0.7, `${saturatedColor}${Math.floor(opacity * 200).toString(16).padStart(2, '0')}`);
+      coreGrad.addColorStop(1, `${saturatedColor}00`);
+      ctx.fillStyle = coreGrad;
+      ctx.beginPath();
+      ctx.arc(x, y, radius, 0, Math.PI * 2);
       ctx.fill();
     };
 
     const animate = () => {
       if (!ctx) return;
       timeRef.current += 0.016;
+      colorCycleRef.current += 0.008;
 
       const w = widthRef.current;
       const h = heightRef.current;
 
-      // Clear with slight trail fade
-      ctx.fillStyle = "rgba(2, 6, 23, 0.3)";
+      // Clear with very slight fade for trails
+      ctx.fillStyle = "rgba(2, 6, 23, 0.25)";
       ctx.fillRect(0, 0, w, h);
 
-      // Add trail sparks at mouse position
+      // Add sparks at mouse position
       if (mousePos.x > 0 && mousePos.y > 0) {
-        addTrailSpark(mousePos.x, mousePos.y);
+        addSpark(mousePos.x, mousePos.y);
       }
 
       // Update and draw sparks
@@ -146,38 +154,37 @@ export default function SparkTrail() {
         spark.life++;
         spark.opacity *= 0.96;
 
-        // Gentle drift
-        spark.vx *= 0.98;
-        spark.vy *= 0.98;
-        spark.vy += 0.05; // slight gravity
+        // Physics
+        spark.vx *= 0.97;
+        spark.vy *= 0.97;
+        spark.vy += 0.08; // gentle gravity
 
-        // Add subtle sine wave movement
-        spark.x += Math.sin(timeRef.current + spark.life * 0.05) * 0.3;
-        spark.y += Math.cos(timeRef.current + spark.life * 0.03) * 0.2;
+        // Subtle wave motion
+        spark.x += Math.sin(timeRef.current * 3 + spark.life * 0.1) * 0.5;
+        spark.y += Math.cos(timeRef.current * 2 + spark.life * 0.08) * 0.3;
 
-        // Draw glow circle (dual-circle bloom)
+        // Draw glow particle
         if (spark.opacity > 0.05) {
-          drawGlowCircle(ctx, spark.x, spark.y, spark.radius, spark.color, spark.opacity);
+          drawGlowParticle(ctx, spark);
         }
 
-        // Keep if still alive
+        // Keep if alive
         if (spark.life < spark.maxLife && spark.opacity > 0.02) {
           newSparks.push(spark);
-        } else {
-          // Respawn at random position or near mouse
-          const respawnX = mousePos.x > 0 ? mousePos.x + (Math.random() - 0.5) * 50 : Math.random() * w;
-          const respawnY = mousePos.y > 0 ? mousePos.y + (Math.random() - 0.5) * 50 : Math.random() * h;
+        } else if (Math.random() < 0.02) {
+          // Occasional respawn at random edge for ambient atmosphere
           newSparks.push({
-            x: respawnX,
-            y: respawnY,
-            vx: (Math.random() - 0.5) * 0.5,
-            vy: (Math.random() - 0.5) * 0.5,
-            radius: 0.5 + Math.random() * 1.5,
-            opacity: 0,
-            color: COLORS[Math.floor(Math.random() * COLORS.length)],
+            x: Math.random() * w,
+            y: Math.random() * h,
+            vx: (Math.random() - 0.5) * 1,
+            vy: (Math.random() - 0.5) * 1,
+            radius: 1 + Math.random() * 2,
+            opacity: 0.1,
+            color: NEON_COLORS[Math.floor(Math.random() * NEON_COLORS.length)].name,
             life: 0,
-            maxLife: 100 + Math.random() * 200,
-            type: "trail",
+            maxLife: 80 + Math.random() * 80,
+            hue: NEON_COLORS[Math.floor(Math.random() * NEON_COLORS.length)].hue,
+            colorPhase: Math.random() * Math.PI * 2,
           });
         }
       });
@@ -188,7 +195,6 @@ export default function SparkTrail() {
     };
 
     resize();
-    initScene();
     animate();
 
     const handleMouseMove = (e: MouseEvent) => {
@@ -202,10 +208,7 @@ export default function SparkTrail() {
     };
 
     const handleResize = () => {
-      const prevW = widthRef.current;
-      const prevH = heightRef.current;
       resize();
-      initScene();
     };
 
     window.addEventListener("mousemove", handleMouseMove);

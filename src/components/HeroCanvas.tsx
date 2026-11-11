@@ -1,22 +1,30 @@
 "use client";
 
 import { useEffect, useRef, useState, useCallback, useMemo } from "react";
+import SparkTrail from "./SparkTrail";
 
 const STAGE_NAMES = ["INGEST", "PROCESS", "PERSIST", "DELIVER"] as const;
-
-const STAGE_COLORS = {
-  INGEST: { main: "#dc2626", second: "#ef4444", glow: "rgba(220, 38, 38," },
-  PROCESS: { main: "#f97316", second: "#fb923c", glow: "rgba(249, 115, 22," },
-  PERSIST: { main: "#f59e0b", second: "#fbbf24", glow: "rgba(245, 158, 11," },
-  DELIVER: { main: "#e11d48", second: "#f43f5e", glow: "rgba(225, 29, 72," },
+const STAGE_SUBLABELS = {
+  INGEST: "Raw Data Intake",
+  PROCESS: "AI Processing",
+  PERSIST: "Storage & Sync",
+  DELIVER: "Automated Output",
 };
+
+const CRIMSON = "#dc2626";
+const CRIMSON_LIGHT = "#ef4444";
+const CRIMSON_GLOW = "rgba(220, 38, 38,";
+const NEON_RED = "#ff1a1a";
+const NEON_ORANGE = "#ff6b00";
+const NEON_PINK = "#ff006e";
+const NEON_GOLD = "#ffd700";
 
 interface Particle {
   x: number;
   y: number;
+  z: number;
   vx: number;
   vy: number;
-  z: number;
   radius: number;
   opacity: number;
   color: string;
@@ -24,7 +32,6 @@ interface Particle {
   stage: number;
   targetX: number;
   targetY: number;
-  targetZ: number;
   life: number;
   maxLife: number;
 }
@@ -40,6 +47,7 @@ interface BoxNode {
   opacity: number;
   stage: number;
   pulse: number;
+  hover: boolean;
 }
 
 interface SliderState {
@@ -59,6 +67,15 @@ interface HealthStatus {
   message: string;
 }
 
+interface Viewport3D {
+  cameraX: number;
+  cameraY: number;
+  cameraZ: number;
+  fov: number;
+  isMobile: boolean;
+  layout: "horizontal" | "vertical";
+}
+
 const MAX_PARTICLES = 50;
 const PARTICLES_PER_STAGE = 8;
 const PACKETS_PER_CONNECTION = 3;
@@ -69,6 +86,8 @@ export default function HeroCanvas() {
   const animationRef = useRef<number | null>(null);
   const particlesRef = useRef<Particle[]>([]);
   const boxesRef = useRef<BoxNode[]>([]);
+  const mouseRef = useRef({ x: -1000, y: -1000, isOverCanvas: false });
+  const hoveredBoxRef = useRef<number | null>(null);
   const [isVisible, setIsVisible] = useState(false);
   const [sliders, setSliders] = useState<SliderState>({
     trafficLoad: 50,
@@ -81,13 +100,21 @@ export default function HeroCanvas() {
     deliverOutflow: 0,
   });
   const [health, setHealth] = useState<HealthStatus>({ type: "balanced", message: "" });
+  const [viewport3D, setViewport3D] = useState<Viewport3D>({
+    cameraX: 0,
+    cameraY: 0,
+    cameraZ: 600,
+    fov: 45,
+    isMobile: false,
+    layout: "horizontal",
+  });
   const timeRef = useRef(0);
   const widthRef = useRef(0);
   const heightRef = useRef(0);
   const dprRef = useRef(1);
   const initializedRef = useRef(false);
 
-  // Memoized metric computation - pure function, no side effects
+  // Memoized metric computation
   const computeMetrics = useCallback((s: SliderState): Metrics => {
     const trafficLoad = s.trafficLoad / 100;
     const processBacklog = Math.max(0, Math.floor((s.trafficLoad - s.processingEfficiency) * 0.5));
@@ -100,7 +127,7 @@ export default function HeroCanvas() {
     };
   }, []);
 
-  // Memoized health computation - pure function
+  // Memoized health computation
   const computeHealth = useCallback((s: SliderState, backlog: number): HealthStatus => {
     if (s.processingEfficiency < 40 || backlog > 5) {
       return {
@@ -127,6 +154,534 @@ export default function HeroCanvas() {
     setHealth(computeHealth(sliders, newMetrics.processBacklog));
   }, [sliders, computeMetrics, computeHealth]);
 
+  // Responsive viewport handler
+  const handleResize = useCallback(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    
+    const rect = canvas.parentElement?.getBoundingClientRect();
+    if (!rect) return;
+    
+    const w = rect.width;
+    const h = rect.height;
+    const isMobile = window.innerWidth < 768;
+    
+    widthRef.current = w;
+    heightRef.current = h;
+    dprRef.current = Math.min(window.devicePixelRatio || 1, 2);
+    canvas.width = w * dprRef.current;
+    canvas.height = h * dprRef.current;
+    canvas.style.width = `${w}px`;
+    canvas.style.height = `${h}px`;
+
+    // Update 3D viewport for mobile/desktop
+    setViewport3D(prev => {
+      if (isMobile) {
+        return {
+          ...prev,
+          isMobile: true,
+          layout: "vertical",
+          fov: 35,
+          cameraZ: 800,
+        };
+      } else {
+        return {
+          ...prev,
+          isMobile: false,
+          layout: "horizontal",
+          fov: 45,
+          cameraZ: 600,
+        };
+      }
+    });
+
+    if (!initializedRef.current) {
+      initScene(w, h, isMobile);
+      initializedRef.current = true;
+    }
+  }, []);
+
+  const initScene = (w: number, h: number, isMobile: boolean) => {
+    particlesRef.current = [];
+    boxesRef.current = [];
+
+    // Calculate positions based on layout
+    let stagePositions: { x: number; y: number; z: number }[] = [];
+    const boxW = isMobile ? 110 : 130;
+    const boxH = isMobile ? 55 : 65;
+    const depth = boxW * 0.35;
+
+    if (isMobile) {
+      // Vertical stack - centered horizontally
+      const centerX = w * 0.5;
+      const startY = h * 0.15;
+      const spacing = h * 0.2;
+      for (let s = 0; s < STAGES; s++) {
+        stagePositions.push({
+          x: centerX,
+          y: startY + s * spacing,
+          z: 0,
+        });
+      }
+    } else {
+      // Horizontal row
+      const stageX = [w * 0.11, w * 0.33, w * 0.55, w * 0.77];
+      const stageY = h * 0.5;
+      for (let s = 0; s < STAGES; s++) {
+        stagePositions.push({
+          x: stageX[s],
+          y: stageY,
+          z: 0,
+        });
+      }
+    }
+
+    // Create 3D boxes for each stage - ALL CRIMSON RED
+    for (let s = 0; s < STAGES; s++) {
+      const pos = stagePositions[s];
+      
+      // Front face (main box)
+      boxesRef.current.push({
+        x: pos.x,
+        y: pos.y,
+        z: pos.z,
+        width: boxW,
+        height: boxH,
+        depth,
+        color: CRIMSON,
+        opacity: 0.95,
+        stage: s,
+        pulse: Math.random() * Math.PI * 2,
+        hover: false,
+      });
+
+      // Right side face (3D depth)
+      boxesRef.current.push({
+        x: pos.x + boxW * 0.1,
+        y: pos.y - boxH * 0.25,
+        z: depth * 0.5,
+        width: depth * 0.8,
+        height: boxH * 0.6,
+        depth,
+        color: CRIMSON_LIGHT,
+        opacity: 0.7,
+        stage: s,
+        pulse: Math.random() * Math.PI * 2,
+        hover: false,
+      });
+
+      // Top face (3D depth)
+      boxesRef.current.push({
+        x: pos.x - boxW * 0.05,
+        y: pos.y - boxH * 0.35,
+        z: -depth * 0.3,
+        width: boxW * 0.7,
+        height: depth * 0.5,
+        depth,
+        color: CRIMSON,
+        opacity: 0.4,
+        stage: s,
+        pulse: Math.random() * Math.PI * 2,
+        hover: false,
+      });
+
+      // Left side accent
+      boxesRef.current.push({
+        x: pos.x - depth * 0.15,
+        y: pos.y - boxH * 0.15,
+        z: depth * 0.2,
+        width: depth * 0.4,
+        height: boxH * 0.5,
+        depth,
+        color: CRIMSON,
+        opacity: 0.5,
+        stage: s,
+        pulse: Math.random() * Math.PI * 2,
+        hover: false,
+      });
+    }
+
+    // Create orbit particles
+    for (let s = 0; s < STAGES; s++) {
+      const pos = stagePositions[s];
+      for (let i = 0; i < PARTICLES_PER_STAGE; i++) {
+        if (particlesRef.current.length >= MAX_PARTICLES) break;
+        const angle = (Math.PI * 2 * i) / PARTICLES_PER_STAGE;
+        const r = 45 + Math.random() * 25;
+        
+        particlesRef.current.push({
+          x: pos.x + Math.cos(angle) * r,
+          y: pos.y + Math.sin(angle) * r * 0.6,
+          z: Math.random() * 60 - 30,
+          vx: 0,
+          vy: 0,
+          radius: 2.5 + Math.random() * 2,
+          opacity: 0.5 + Math.random() * 0.4,
+          color: CRIMSON,
+          type: "orbit",
+          stage: s,
+          targetX: pos.x,
+          targetY: pos.y,
+          life: 0,
+          maxLife: 9999,
+        });
+      }
+    }
+
+    // Flowing packets between stages
+    for (let s = 0; s < STAGES - 1; s++) {
+      const startPos = stagePositions[s];
+      const endPos = stagePositions[s + 1];
+      for (let i = 0; i < PACKETS_PER_CONNECTION; i++) {
+        if (particlesRef.current.length >= MAX_PARTICLES) break;
+        const progress = i / PACKETS_PER_CONNECTION;
+        particlesRef.current.push({
+          x: startPos.x + (endPos.x - startPos.x) * progress,
+          y: startPos.y + (endPos.y - startPos.y) * progress,
+          z: 0,
+          vx: 0,
+          vy: 0,
+          radius: 3,
+          opacity: 0.8,
+          color: CRIMSON,
+          type: "packet",
+          stage: s,
+          targetX: endPos.x,
+          targetY: endPos.y,
+          life: 0,
+          maxLife: 9999,
+        });
+      }
+    }
+  };
+
+  // 3D projection helper
+  const project3D = (x: number, y: number, z: number, vp: Viewport3D, w: number, h: number) => {
+    const scale = vp.fov / (vp.fov + z);
+    const screenX = w * 0.5 + (x - w * 0.5) * scale;
+    const screenY = h * 0.5 + (y - h * 0.5) * scale;
+    return { x: screenX, y: screenY, scale };
+  };
+
+  // Check if mouse is over a box (2D screen space)
+  const checkBoxHover = (box: BoxNode, mx: number, my: number, vp: Viewport3D, w: number, h: number) => {
+    const proj = project3D(box.x, box.y, box.z, vp, w, h);
+    const halfW = (box.width * proj.scale) / 2;
+    const halfH = (box.height * proj.scale) / 2;
+    return mx >= proj.x - halfW && mx <= proj.x + halfW && my >= proj.y - halfH && my <= proj.y + halfH;
+  };
+
+  const drawIsometricBox = (
+    ctx: CanvasRenderingContext2D,
+    box: BoxNode,
+    vp: Viewport3D,
+    w: number,
+    h: number
+  ) => {
+    const proj = project3D(box.x, box.y, box.z, vp, w, h);
+    const { x, y, scale } = proj;
+    const width = box.width * scale;
+    const height = box.height * scale;
+    const depth = box.depth * scale;
+    const baseOpacity = box.opacity * scale;
+    
+    // Hover glow intensity
+    const hoverIntensity = box.hover ? 1.5 : 1;
+    const pulseGlow = Math.sin(timeRef.current * 3 + box.stage) * 0.15 + 0.85;
+    
+    ctx.save();
+    ctx.globalAlpha = baseOpacity;
+    
+    // Left face
+    const leftGrad = ctx.createLinearGradient(
+      x - width/2 - depth * 0.3, y - height/2,
+      x - width/2, y + height/2
+    );
+    leftGrad.addColorStop(0, `${CRIMSON}40`);
+    leftGrad.addColorStop(1, `${CRIMSON}20`);
+    ctx.fillStyle = leftGrad;
+    ctx.beginPath();
+    ctx.moveTo(x - width/2 - depth * 0.3, y - height/2);
+    ctx.lineTo(x - width/2, y - height/2 - depth * 0.2);
+    ctx.lineTo(x - width/2, y + height/2 - depth * 0.2);
+    ctx.lineTo(x - width/2 - depth * 0.3, y + height/2);
+    ctx.closePath();
+    ctx.fill();
+
+    // Top face
+    const topGrad = ctx.createLinearGradient(
+      x - width/2 - depth * 0.2, y - height/2 - depth * 0.25,
+      x + width/2, y - height/2 + depth * 0.1
+    );
+    topGrad.addColorStop(0, `${CRIMSON}90`);
+    topGrad.addColorStop(0.5, `${CRIMSON}60`);
+    topGrad.addColorStop(1, `${CRIMSON}40`);
+    ctx.fillStyle = topGrad;
+    ctx.beginPath();
+    ctx.moveTo(x - width/2 - depth * 0.2, y - height/2 - depth * 0.25);
+    ctx.lineTo(x + width/2 + depth * 0.2, y - height/2 - depth * 0.25);
+    ctx.lineTo(x + width/2, y - height/2);
+    ctx.lineTo(x - width/2, y - height/2);
+    ctx.closePath();
+    ctx.fill();
+
+    // Right face
+    const rightGrad = ctx.createLinearGradient(
+      x + width/2, y - height/2,
+      x + width/2 + depth * 0.3, y + height/2 - depth * 0.2
+    );
+    rightGrad.addColorStop(0, `${CRIMSON_LIGHT}80`);
+    rightGrad.addColorStop(1, `${CRIMSON_LIGHT}40`);
+    ctx.fillStyle = rightGrad;
+    ctx.beginPath();
+    ctx.moveTo(x + width/2, y - height/2);
+    ctx.lineTo(x + width/2 + depth * 0.3, y - height/2 - depth * 0.2);
+    ctx.lineTo(x + width/2 + depth * 0.3, y + height/2 - depth * 0.2);
+    ctx.lineTo(x + width/2, y + height/2);
+    ctx.closePath();
+    ctx.fill();
+
+    // Front face - main visible face
+    const frontGrad = ctx.createLinearGradient(
+      x - width/2, y - height/2,
+      x + width/2, y + height/2
+    );
+    frontGrad.addColorStop(0, `${CRIMSON}${Math.floor(baseOpacity * 255 * hoverIntensity).toString(16).padStart(2, '0')}`);
+    frontGrad.addColorStop(0.3, `${CRIMSON}${Math.floor(baseOpacity * 200 * hoverIntensity).toString(16).padStart(2, '0')}`);
+    frontGrad.addColorStop(0.7, `${CRIMSON}${Math.floor(baseOpacity * 140 * hoverIntensity).toString(16).padStart(2, '0')}`);
+    frontGrad.addColorStop(1, `${CRIMSON}${Math.floor(baseOpacity * 80 * hoverIntensity).toString(16).padStart(2, '0')}`);
+    ctx.fillStyle = frontGrad;
+    ctx.beginPath();
+    ctx.moveTo(x - width/2, y - height/2);
+    ctx.lineTo(x + width/2, y - height/2);
+    ctx.lineTo(x + width/2, y + height/2);
+    ctx.lineTo(x - width/2, y + height/2);
+    ctx.closePath();
+    ctx.fill();
+
+    // NEON RED GLOW on hover
+    if (box.hover) {
+      ctx.shadowColor = NEON_RED;
+      ctx.shadowBlur = 40 * pulseGlow * hoverIntensity;
+      ctx.strokeStyle = `${NEON_RED}${Math.floor(255 * pulseGlow).toString(16).padStart(2, '0')}`;
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.moveTo(x - width/2, y - height/2);
+      ctx.lineTo(x + width/2, y - height/2);
+      ctx.lineTo(x + width/2, y + height/2);
+      ctx.lineTo(x - width/2, y + height/2);
+      ctx.closePath();
+      ctx.stroke();
+      ctx.shadowBlur = 0;
+      
+      // Additional outer glow ring
+      ctx.shadowColor = NEON_ORANGE;
+      ctx.shadowBlur = 60 * pulseGlow;
+      ctx.strokeStyle = `${NEON_ORANGE}${Math.floor(180 * pulseGlow).toString(16).padStart(2, '0')}`;
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(x - width/2 - 5, y - height/2 - 5);
+      ctx.lineTo(x + width/2 + 5, y - height/2 - 5);
+      ctx.lineTo(x + width/2 + 5, y + height/2 + 5);
+      ctx.lineTo(x - width/2 - 5, y + height/2 + 5);
+      ctx.closePath();
+      ctx.stroke();
+      ctx.shadowBlur = 0;
+    } else {
+      // Subtle resting glow
+      ctx.shadowColor = CRIMSON;
+      ctx.shadowBlur = 15 * pulseGlow;
+      ctx.strokeStyle = `${CRIMSON_GLOW}${Math.floor(baseOpacity * 200 * pulseGlow).toString(16).padStart(2, '0')})`;
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(x - width/2, y - height/2);
+      ctx.lineTo(x + width/2, y - height/2);
+      ctx.lineTo(x + width/2, y + height/2);
+      ctx.lineTo(x - width/2, y + height/2);
+      ctx.closePath();
+      ctx.stroke();
+      ctx.shadowBlur = 0;
+    }
+
+    // Stage label on front face
+    ctx.font = `bold ${Math.max(10, 12 * scale)}px 'Geist Mono', monospace`;
+    ctx.fillStyle = "#ffffff";
+    ctx.textAlign = "center";
+    ctx.shadowColor = "rgba(0,0,0,0.5)";
+    ctx.shadowBlur = 4;
+    ctx.fillText(STAGE_NAMES[box.stage], x, y + 4 * scale);
+    ctx.shadowBlur = 0;
+
+    // Sub-label
+    ctx.font = `500 ${Math.max(7, 8 * scale)}px 'Geist', sans-serif`;
+    ctx.fillStyle = "rgba(255,255,255,0.7)";
+    ctx.fillText(STAGE_SUBLABELS[STAGE_NAMES[box.stage]], x, y + 18 * scale);
+    
+    ctx.restore();
+  };
+
+  const drawConnections = (ctx: CanvasRenderingContext2D, vp: Viewport3D, w: number, h: number, stagePositions: { x: number; y: number }[]) => {
+    for (let i = 0; i < stagePositions.length - 1; i++) {
+      const start = project3D(stagePositions[i].x, stagePositions[i].y, 0, vp, w, h);
+      const end = project3D(stagePositions[i + 1].x, stagePositions[i + 1].y, 0, vp, w, h);
+      
+      const grad = ctx.createLinearGradient(start.x, start.y, end.x, end.y);
+      grad.addColorStop(0, `${CRIMSON_GLOW}0.4)`);
+      grad.addColorStop(0.5, `${CRIMSON_GLOW}0.6)`);
+      grad.addColorStop(1, `${CRIMSON_GLOW}0.4)`);
+      
+      ctx.strokeStyle = grad;
+      ctx.lineWidth = 4;
+      ctx.setLineDash([20, 12]);
+      ctx.lineDashOffset = -timeRef.current * 30;
+      ctx.shadowColor = CRIMSON;
+      ctx.shadowBlur = 15;
+      ctx.beginPath();
+      ctx.moveTo(start.x, start.y);
+      
+      // Curved connection
+      const midX = (start.x + end.x) / 2;
+      const midY = (start.y + end.y) / 2 - 30;
+      ctx.quadraticCurveTo(midX, midY, end.x, end.y);
+      ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.shadowBlur = 0;
+    }
+  };
+
+  const animate = () => {
+    if (!canvasRef.current) return;
+    const ctx = canvasRef.current.getContext("2d");
+    if (!ctx) return;
+    
+    timeRef.current += 0.016;
+    
+    const w = widthRef.current;
+    const h = heightRef.current;
+    const vp = viewport3D;
+    const isMobile = vp.isMobile;
+    
+    // Recalculate stage positions for current viewport
+    const boxW = isMobile ? 110 : 130;
+    const boxH = isMobile ? 55 : 65;
+    const stagePositions: { x: number; y: number }[] = [];
+    
+    if (isMobile) {
+      const centerX = w * 0.5;
+      const startY = h * 0.15;
+      const spacing = h * 0.2;
+      for (let s = 0; s < STAGES; s++) {
+        stagePositions.push({ x: centerX, y: startY + s * spacing });
+      }
+    } else {
+      const stageX = [w * 0.11, w * 0.33, w * 0.55, w * 0.77];
+      const stageY = h * 0.5;
+      for (let s = 0; s < STAGES; s++) {
+        stagePositions.push({ x: stageX[s], y: stageY });
+      }
+    }
+    
+    // Clear
+    ctx.fillStyle = "#020617";
+    ctx.fillRect(0, 0, w, h);
+    
+    // Subtle grid
+    ctx.strokeStyle = "rgba(220, 38, 38, 0.03)";
+    ctx.lineWidth = 1;
+    const gridSize = 60;
+    for (let x = 0; x <= w; x += gridSize) {
+      ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, h); ctx.stroke();
+    }
+    for (let y = 0; y <= h; y += gridSize) {
+      ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(w, y); ctx.stroke();
+    }
+    
+    // Connections
+    drawConnections(ctx, vp, w, h, stagePositions);
+    
+    // Sort boxes by depth for correct 3D rendering
+    const sortedBoxes = [...boxesRef.current].sort((a, b) => a.z - b.z);
+    
+    // Check hover state for each box
+    sortedBoxes.forEach((box) => {
+      box.hover = checkBoxHover(box, mouseRef.current.x, mouseRef.current.y, vp, w, h);
+    });
+    
+    // Draw all boxes
+    sortedBoxes.forEach((box) => {
+      box.pulse += 0.015;
+      drawIsometricBox(ctx, box, vp, w, h);
+    });
+    
+    // Update particles
+    const newParticles: Particle[] = [];
+    const trafficMultiplier = sliders.trafficLoad / 50;
+    const deliveryMultiplier = sliders.deliverySpeed / 50;
+    const effMultiplier = Math.max(0.3, sliders.processingEfficiency / 50);
+    
+    particlesRef.current.forEach((p) => {
+      if (p.type === "orbit") {
+        const pos = stagePositions[p.stage];
+        const angle = timeRef.current * (0.4 + p.stage * 0.08) * trafficMultiplier + p.life * 0.04;
+        const r = 50 + Math.sin(timeRef.current * 0.4 + p.life * 0.08) * 10;
+        
+        p.x = pos.x + Math.cos(angle) * r;
+        p.y = pos.y + Math.sin(angle) * r * 0.6;
+        p.z = Math.sin(timeRef.current + p.life * 0.04) * 30;
+        
+        p.opacity = 0.4 + 0.5 * Math.abs(Math.sin(timeRef.current * 1.5 + p.life * 0.08));
+        
+        newParticles.push(p);
+      }
+      else if (p.type === "packet") {
+        const speedMultiplier = (trafficMultiplier + deliveryMultiplier) / 2;
+        const startPos = stagePositions[p.stage];
+        const endPos = stagePositions[p.stage + 1];
+        const progress = (p.x - startPos.x) / (endPos.x - startPos.x) || 0;
+        
+        p.x += p.vx * speedMultiplier * 0.5;
+        p.y = startPos.y + (endPos.y - startPos.y) * progress + Math.sin(timeRef.current * 3 + p.life * 0.1) * 5;
+        
+        if (p.x > endPos.x + 30) {
+          p.x = startPos.x - 30;
+          p.life = 0;
+        }
+        
+        p.opacity = 0.5 + 0.5 * Math.abs(Math.sin(timeRef.current * 3 + p.life * 0.1)) * effMultiplier;
+        
+        newParticles.push(p);
+      }
+    });
+    
+    particlesRef.current = newParticles;
+    
+    // Draw particles
+    newParticles.forEach((p) => {
+      const proj = project3D(p.x, p.y, p.z, vp, w, h);
+      const r = p.radius * proj.scale;
+      
+      if (p.type === "packet") {
+        const grad = ctx.createRadialGradient(proj.x, proj.y, 0, proj.x, proj.y, r * 8);
+        grad.addColorStop(0, `${p.color}${Math.floor(p.opacity * 200).toString(16).padStart(2, '0')}`);
+        grad.addColorStop(1, `${p.color}00`);
+        ctx.fillStyle = grad;
+        ctx.beginPath();
+        ctx.arc(proj.x, proj.y, r * 8, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      
+      const coreGrad = ctx.createRadialGradient(proj.x, proj.y, 0, proj.x, proj.y, r);
+      coreGrad.addColorStop(0, `${p.color}${Math.floor(p.opacity * 255).toString(16).padStart(2, '0')}`);
+      coreGrad.addColorStop(1, `${p.color}00`);
+      ctx.fillStyle = coreGrad;
+      ctx.beginPath();
+      ctx.arc(proj.x, proj.y, r, 0, Math.PI * 2);
+      ctx.fill();
+    });
+    
+    animationRef.current = requestAnimationFrame(animate);
+  };
+
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -134,432 +689,58 @@ export default function HeroCanvas() {
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
-    const resize = () => {
-      const rect = canvas.parentElement?.getBoundingClientRect();
-      if (!rect) return;
-      widthRef.current = rect.width;
-      heightRef.current = rect.height;
-      dprRef.current = Math.min(window.devicePixelRatio || 1, 2);
-      canvas.width = widthRef.current * dprRef.current;
-      canvas.height = heightRef.current * dprRef.current;
-      canvas.style.width = `${widthRef.current}px`;
-      canvas.style.height = `${heightRef.current}px`;
-      ctx.setTransform(dprRef.current, 0, 0, dprRef.current, 0, 0);
-      if (!initializedRef.current) {
-        initScene();
-        initializedRef.current = true;
-      }
-    };
-
-    const initScene = () => {
-      const w = widthRef.current;
-      const h = heightRef.current;
-      particlesRef.current = [];
-      boxesRef.current = [];
-
-      const stageX = [w * 0.11, w * 0.33, w * 0.55, w * 0.77];
-      const stageY = h * 0.5;
-
-      // Create 3D boxes for each stage
-      for (let s = 0; s < STAGES; s++) {
-        const colorObj = STAGE_COLORS[STAGE_NAMES[s]];
-        const boxW = s === 3 ? 130 : 90;
-        const boxH = s === 3 ? 65 : 45;
-        const depth = boxW * 0.35;
-
-        boxesRef.current.push({
-          x: stageX[s],
-          y: stageY,
-          z: 0,
-          width: boxW,
-          height: boxH,
-          depth,
-          color: colorObj.main,
-          opacity: 0.9,
-          stage: s,
-          pulse: Math.random() * Math.PI * 2,
-        });
-
-        boxesRef.current.push({
-          x: stageX[s] + boxW * 0.1,
-          y: stageY - boxH * 0.25,
-          z: depth * 0.5,
-          width: depth * 0.8,
-          height: boxH * 0.6,
-          depth,
-          color: colorObj.second,
-          opacity: 0.6,
-          stage: s,
-          pulse: Math.random() * Math.PI * 2,
-        });
-
-        boxesRef.current.push({
-          x: stageX[s] - boxW * 0.05,
-          y: stageY - boxH * 0.35,
-          z: -depth * 0.3,
-          width: boxW * 0.7,
-          height: depth * 0.5,
-          depth,
-          color: colorObj.main,
-          opacity: 0.3,
-          stage: s,
-          pulse: Math.random() * Math.PI * 2,
-        });
-
-        boxesRef.current.push({
-          x: stageX[s] - depth * 0.15,
-          y: stageY - boxH * 0.15,
-          z: depth * 0.2,
-          width: depth * 0.4,
-          height: boxH * 0.5,
-          depth,
-          color: colorObj.main,
-          opacity: 0.4,
-          stage: s,
-          pulse: Math.random() * Math.PI * 2,
-        });
-      }
-
-      // Create orbit particles - CAP at MAX_PARTICLES
-      for (let s = 0; s < STAGES; s++) {
-        const colorObj = STAGE_COLORS[STAGE_NAMES[s]];
-        for (let i = 0; i < PARTICLES_PER_STAGE; i++) {
-          if (particlesRef.current.length >= MAX_PARTICLES) break;
-          const angle = (Math.PI * 2 * i) / PARTICLES_PER_STAGE;
-          const r = 35 + Math.random() * 20;
-          
-          particlesRef.current.push({
-            x: stageX[s] + Math.cos(angle) * r,
-            y: stageY + Math.sin(angle) * r * 0.6,
-            z: Math.random() * 50 - 25,
-            vx: 0,
-            vy: 0,
-            radius: 2 + Math.random() * 2,
-            opacity: 0.4 + Math.random() * 0.4,
-            color: colorObj.main,
-            type: "orbit",
-            stage: s,
-            targetX: stageX[s],
-            targetY: stageY,
-            targetZ: 0,
-            life: 0,
-            maxLife: 9999,
-          });
-        }
-      }
-
-      // Flowing packets between stages - CAP at MAX_PARTICLES
-      for (let s = 0; s < STAGES - 1; s++) {
-        const startColor = STAGE_COLORS[STAGE_NAMES[s]];
-        for (let i = 0; i < PACKETS_PER_CONNECTION; i++) {
-          if (particlesRef.current.length >= MAX_PARTICLES) break;
-          const progress = i / PACKETS_PER_CONNECTION;
-          particlesRef.current.push({
-            x: stageX[s] + (stageX[s + 1] - stageX[s]) * progress,
-            y: stageY + (Math.random() - 0.5) * 12,
-            z: 0,
-            vx: 0.3 + s * 0.05,
-            vy: 0,
-            radius: 2.5,
-            opacity: 0.7,
-            color: startColor.main,
-            type: "packet",
-            stage: s,
-            targetX: stageX[s + 1],
-            targetY: stageY,
-            targetZ: 0,
-            life: 0,
-            maxLife: 9999,
-          });
-        }
-      }
-    };
-
-    const drawIsometricBox = (
-      ctx: CanvasRenderingContext2D,
-      box: BoxNode,
-      colorObj: { main: string; second: string; glow: string }
-    ) => {
-      const { x, y, width, height, depth, opacity } = box;
-      
-      ctx.save();
-      ctx.globalAlpha = opacity;
-      
-      // Left face
-      const leftGrad = ctx.createLinearGradient(
-        x - depth * 0.3, y - height / 2,
-        x, y + height / 2
-      );
-      leftGrad.addColorStop(0, `${colorObj.main}30`);
-      leftGrad.addColorStop(1, `${colorObj.main}15`);
-      ctx.fillStyle = leftGrad;
-      ctx.beginPath();
-      ctx.moveTo(x - depth * 0.3, y - height / 2);
-      ctx.lineTo(x, y - height / 2 - depth * 0.2);
-      ctx.lineTo(x, y + height / 2 - depth * 0.2);
-      ctx.lineTo(x - depth * 0.3, y + height / 2);
-      ctx.closePath();
-      ctx.fill();
-
-      // Top face
-      const topGrad = ctx.createLinearGradient(
-        x - depth * 0.2, y - height / 2 - depth * 0.25,
-        x + width, y - height / 2 + depth * 0.1
-      );
-      topGrad.addColorStop(0, `${colorObj.main}80`);
-      topGrad.addColorStop(0.5, `${colorObj.main}50`);
-      topGrad.addColorStop(1, `${colorObj.main}30`);
-      ctx.fillStyle = topGrad;
-      ctx.beginPath();
-      ctx.moveTo(x - depth * 0.2, y - height / 2 - depth * 0.25);
-      ctx.lineTo(x + width + depth * 0.2, y - height / 2 - depth * 0.25);
-      ctx.lineTo(x + width, y - height / 2);
-      ctx.lineTo(x, y - height / 2);
-      ctx.closePath();
-      ctx.fill();
-
-      // Right face
-      const rightGrad = ctx.createLinearGradient(
-        x + width, y - height / 2,
-        x + width + depth * 0.3, y + height / 2 - depth * 0.2
-      );
-      rightGrad.addColorStop(0, `${colorObj.second}70`);
-      rightGrad.addColorStop(1, `${colorObj.second}30`);
-      ctx.fillStyle = rightGrad;
-      ctx.beginPath();
-      ctx.moveTo(x + width, y - height / 2);
-      ctx.lineTo(x + width + depth * 0.3, y - height / 2 - depth * 0.2);
-      ctx.lineTo(x + width + depth * 0.3, y + height / 2 - depth * 0.2);
-      ctx.lineTo(x + width, y + height / 2);
-      ctx.closePath();
-      ctx.fill();
-
-      // Front face
-      const frontGrad = ctx.createLinearGradient(
-        x, y - height / 2,
-        x + width, y + height / 2
-      );
-      frontGrad.addColorStop(0, `${colorObj.main}${Math.floor(opacity * 255).toString(16).padStart(2, '0')}`);
-      frontGrad.addColorStop(0.3, `${colorObj.main}${Math.floor(opacity * 180).toString(16).padStart(2, '0')}`);
-      frontGrad.addColorStop(0.7, `${colorObj.main}${Math.floor(opacity * 120).toString(16).padStart(2, '0')}`);
-      frontGrad.addColorStop(1, `${colorObj.main}${Math.floor(opacity * 60).toString(16).padStart(2, '0')}`);
-      ctx.fillStyle = frontGrad;
-      ctx.beginPath();
-      ctx.moveTo(x, y - height / 2);
-      ctx.lineTo(x + width, y - height / 2);
-      ctx.lineTo(x + width, y + height / 2);
-      ctx.lineTo(x, y + height / 2);
-      ctx.closePath();
-      ctx.fill();
-
-      // Glowing border
-      const pulseScale = 1 + Math.sin(timeRef.current * 2 + box.stage) * 0.03;
-      ctx.strokeStyle = `${colorObj.glow}${Math.floor(opacity * 220).toString(16).padStart(2, '0')})`;
-      ctx.lineWidth = 2;
-      ctx.shadowColor = colorObj.main;
-      ctx.shadowBlur = 15 * pulseScale;
-      ctx.beginPath();
-      ctx.moveTo(x, y - height / 2);
-      ctx.lineTo(x + width, y - height / 2);
-      ctx.lineTo(x + width, y + height / 2);
-      ctx.lineTo(x, y + height / 2);
-      ctx.closePath();
-      ctx.stroke();
-      ctx.shadowBlur = 0;
-
-      // Stage label
-      ctx.font = "bold 12px 'Geist Mono', monospace";
-      ctx.fillStyle = "#ffffff";
-      ctx.textAlign = "center";
-      ctx.shadowColor = "rgba(0,0,0,0.5)";
-      ctx.shadowBlur = 4;
-      ctx.fillText(STAGE_NAMES[box.stage], x + width / 2, y + 4);
-      ctx.shadowBlur = 0;
-
-      const subLabels = {
-        INGEST: "Raw Data Intake",
-        PROCESS: "AI Processing",
-        PERSIST: "Storage & Sync",
-        DELIVER: "Automated Output",
-      };
-      ctx.font = "500 8px 'Geist', sans-serif";
-      ctx.fillStyle = "rgba(255,255,255,0.6)";
-      ctx.fillText(subLabels[STAGE_NAMES[box.stage]], x + width / 2, y + 18);
-      
-      ctx.restore();
-    };
-
-    const drawConnections = (ctx: CanvasRenderingContext2D, w: number, h: number) => {
-      const stageX = [w * 0.11, w * 0.33, w * 0.55, w * 0.77];
-      const stageY = h * 0.5;
-      
-      for (let i = 0; i < stageX.length - 1; i++) {
-        const colorObj = STAGE_COLORS[STAGE_NAMES[i]];
-        const nextColorObj = STAGE_COLORS[STAGE_NAMES[i + 1]];
-        
-        const grad = ctx.createLinearGradient(stageX[i], stageY, stageX[i + 1], stageY);
-        grad.addColorStop(0, `${colorObj.glow}0.3)`);
-        grad.addColorStop(0.5, `${colorObj.glow}0.5)`);
-        grad.addColorStop(1, `${nextColorObj.glow}0.3)`);
-        
-        ctx.strokeStyle = grad;
-        ctx.lineWidth = 3;
-        ctx.setLineDash([12, 8]);
-        ctx.lineDashOffset = -timeRef.current * 25;
-        ctx.shadowColor = colorObj.main;
-        ctx.shadowBlur = 10;
-        ctx.beginPath();
-        ctx.moveTo(stageX[i], stageY);
-        ctx.bezierCurveTo(
-          stageX[i] + (stageX[i + 1] - stageX[i]) * 0.33, stageY - 20,
-          stageX[i] + (stageX[i + 1] - stageX[i]) * 0.66, stageY - 20,
-          stageX[i + 1], stageY
-        );
-        ctx.stroke();
-        ctx.setLineDash([]);
-        ctx.shadowBlur = 0;
-      }
-    };
-
-    const animate = () => {
-      if (!ctx) return;
-      timeRef.current += 0.016;
-      
-      const w = widthRef.current;
-      const h = heightRef.current;
-      
-      ctx.fillStyle = "#020617";
-      ctx.fillRect(0, 0, w, h);
-      
-      // Grid background
-      ctx.strokeStyle = "rgba(220, 38, 38, 0.03)";
-      ctx.lineWidth = 1;
-      const gridSize = 60;
-      for (let x = 0; x <= w; x += gridSize) {
-        ctx.beginPath();
-        ctx.moveTo(x, 0);
-        ctx.lineTo(x, h);
-        ctx.stroke();
-      }
-      for (let y = 0; y <= h; y += gridSize) {
-        ctx.beginPath();
-        ctx.moveTo(0, y);
-        ctx.lineTo(w, y);
-        ctx.stroke();
-      }
-      
-      drawConnections(ctx, w, h);
-      
-      const sortedBoxes = [...boxesRef.current].sort((a, b) => a.z - b.z);
-      
-      sortedBoxes.forEach((box) => {
-        const colorObj = STAGE_COLORS[STAGE_NAMES[box.stage]];
-        box.pulse += 0.015;
-        const pulseScale = 1 + Math.sin(box.pulse) * 0.04;
-        
-        drawIsometricBox(ctx, {
-          ...box,
-          width: box.width * pulseScale,
-          height: box.height * pulseScale,
-          depth: box.depth * pulseScale,
-        }, colorObj);
-      });
-      
-      // Update particles - SPEED BOUND TO SLIDERS
-      const newParticles: Particle[] = [];
-      const trafficMultiplier = sliders.trafficLoad / 50;
-      const deliveryMultiplier = sliders.deliverySpeed / 50;
-      const effMultiplier = Math.max(0.3, sliders.processingEfficiency / 50);
-      
-      particlesRef.current.forEach((p) => {
-        if (p.type === "orbit") {
-          const stageX = [w * 0.11, w * 0.33, w * 0.55, w * 0.77][p.stage];
-          const stageY = h * 0.5;
-          const angle = timeRef.current * (0.4 + p.stage * 0.08) * trafficMultiplier + p.life * 0.04;
-          const r = 40 + Math.sin(timeRef.current * 0.4 + p.life * 0.08) * 8;
-          
-          p.x = stageX + Math.cos(angle) * r;
-          p.y = stageY + Math.sin(angle) * r * 0.5;
-          p.z = Math.sin(timeRef.current + p.life * 0.04) * 20;
-          
-          p.opacity = 0.3 + 0.5 * Math.abs(Math.sin(timeRef.current * 1.5 + p.life * 0.08));
-          
-          newParticles.push(p);
-        }
-        else if (p.type === "packet") {
-          // Speed scales with Traffic Load AND Delivery Speed
-          const speedMultiplier = (trafficMultiplier + deliveryMultiplier) / 2;
-          p.x += p.vx * speedMultiplier;
-          
-          if (p.x > p.targetX + 30) {
-            p.x = [w * 0.11, w * 0.33, w * 0.55][p.stage] - 30;
-            p.life = 0;
-          }
-          
-          p.y = p.targetY + Math.sin(timeRef.current * 2.5 + p.life * 0.1) * 4;
-          
-          p.opacity = 0.4 + 0.5 * Math.abs(Math.sin(timeRef.current * 3 + p.life * 0.1)) * effMultiplier;
-          
-          newParticles.push(p);
-        }
-      });
-      
-      particlesRef.current = newParticles;
-      
-      // Draw particles
-      newParticles.forEach((p) => {
-        const r = p.radius;
-        
-        if (p.type === "packet") {
-          const grad = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, r * 6);
-          grad.addColorStop(0, `${p.color}${Math.floor(p.opacity * 180).toString(16).padStart(2, '0')}`);
-          grad.addColorStop(1, `${p.color}00`);
-          ctx.fillStyle = grad;
-          ctx.beginPath();
-          ctx.arc(p.x, p.y, r * 6, 0, Math.PI * 2);
-          ctx.fill();
-        }
-        
-        const coreGrad = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, r);
-        coreGrad.addColorStop(0, `${p.color}${Math.floor(p.opacity * 255).toString(16).padStart(2, '0')}`);
-        coreGrad.addColorStop(1, `${p.color}00`);
-        ctx.fillStyle = coreGrad;
-        ctx.beginPath();
-        ctx.arc(p.x, p.y, r, 0, Math.PI * 2);
-        ctx.fill();
-      });
-      
-      animationRef.current = requestAnimationFrame(animate);
-    };
-
-    resize();
+    handleResize();
+    initScene(widthRef.current, heightRef.current, viewport3D.isMobile);
     animate();
 
-    const handleResize = () => {
-      const prevW = widthRef.current;
-      const prevH = heightRef.current;
-      resize();
-      if (prevW !== widthRef.current || prevH !== heightRef.current) {
-        particlesRef.current.forEach(p => {
-          p.x = (p.x / prevW) * widthRef.current;
-          p.y = (p.y / prevH) * heightRef.current;
-          p.targetX = (p.targetX / prevW) * widthRef.current;
-          p.targetY = (p.targetY / prevH) * heightRef.current;
-        });
-        boxesRef.current.forEach(b => {
-          b.x = (b.x / prevW) * widthRef.current;
-          b.y = (b.y / prevH) * heightRef.current;
-        });
+    const handleMouseMove = (e: MouseEvent) => {
+      const rect = canvas.getBoundingClientRect();
+      mouseRef.current = {
+        x: e.clientX - rect.left,
+        y: e.clientY - rect.top,
+        isOverCanvas: true,
+      };
+    };
+
+    const handleMouseLeave = () => {
+      mouseRef.current.isOverCanvas = false;
+      mouseRef.current.x = -1000;
+      mouseRef.current.y = -1000;
+    };
+
+    const handleTouchMove = (e: TouchEvent) => {
+      if (e.touches.length > 0) {
+        const rect = canvas.getBoundingClientRect();
+        const touch = e.touches[0];
+        mouseRef.current = {
+          x: touch.clientX - rect.left,
+          y: touch.clientY - rect.top,
+          isOverCanvas: true,
+        };
       }
+    };
+
+    const handleTouchEnd = () => {
+      mouseRef.current.isOverCanvas = false;
+      mouseRef.current.x = -1000;
+      mouseRef.current.y = -1000;
     };
 
     window.addEventListener("resize", handleResize);
+    canvas.addEventListener("mousemove", handleMouseMove);
+    canvas.addEventListener("mouseleave", handleMouseLeave);
+    canvas.addEventListener("touchmove", handleTouchMove, { passive: true });
+    canvas.addEventListener("touchend", handleTouchEnd);
 
     return () => {
       window.removeEventListener("resize", handleResize);
+      canvas.removeEventListener("mousemove", handleMouseMove);
+      canvas.removeEventListener("mouseleave", handleMouseLeave);
+      canvas.removeEventListener("touchmove", handleTouchMove);
+      canvas.removeEventListener("touchend", handleTouchEnd);
       if (animationRef.current) cancelAnimationFrame(animationRef.current);
     };
-  }, [sliders.trafficLoad, sliders.processingEfficiency, sliders.deliverySpeed]);
+  }, [viewport3D.isMobile, viewport3D.layout, sliders.trafficLoad, sliders.processingEfficiency, sliders.deliverySpeed]);
 
   useEffect(() => {
     const timer = setTimeout(() => setIsVisible(true), 100);
@@ -587,6 +768,8 @@ export default function HeroCanvas() {
         <div className="absolute inset-0 bg-gradient-to-b from-transparent via-background to-background opacity-70" />
         <div className="absolute top-1/5 left-1/10 w-[500px] h-[500px] bg-red-600/5 rounded-full blur-[200px]" />
         <div className="absolute bottom-1/5 right-1/8 w-[450px] h-[450px] bg-amber-600/5 rounded-full blur-[200px]" />
+        {/* Spark Trail Layer */}
+        <SparkTrail />
       </div>
 
       <div className="relative z-10 w-full max-w-7xl mx-auto px-6 lg:px-12 py-12 flex flex-col flex-1">
@@ -596,7 +779,7 @@ export default function HeroCanvas() {
           transition: 'all 1s cubic-bezier(0.16, 1, 0.3, 1)' 
         }}>
           <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full glass border-red-500/20 mb-6">
-            <span className="w-2 h-2 bg-red-400 rounded-full" aria-hidden="true" />
+            <span className="w-2 h-2 bg-red-400 rounded-full animate-pulse" aria-hidden="true" />
             <span className="text-sm font-medium text-red-400">Solving daily business operations</span>
           </div>
 
@@ -624,7 +807,7 @@ export default function HeroCanvas() {
             </div>
             <div className="relative z-10">
               <div className="flex items-center gap-2 text-xs font-medium text-red-400 uppercase tracking-wider mb-2">
-                <span className="w-1.5 h-1.5 bg-red-400 rounded-full" aria-hidden="true" />
+                <span className="w-1.5 h-1.5 bg-red-400 rounded-full animate-pulse" aria-hidden="true" />
                 INGEST LAG
               </div>
               <div className="text-3xl lg:text-4xl font-bold text-white font-mono">{metrics.ingestLag.toFixed(1)}</div>
@@ -638,7 +821,7 @@ export default function HeroCanvas() {
             </div>
             <div className="relative z-10">
               <div className="flex items-center gap-2 text-xs font-medium text-orange-400 uppercase tracking-wider mb-2">
-                <span className="w-1.5 h-1.5 bg-orange-400 rounded-full" aria-hidden="true" />
+                <span className="w-1.5 h-1.5 bg-orange-400 rounded-full animate-pulse" aria-hidden="true" />
                 PROCESS BACKLOG
               </div>
               <div className="text-3xl lg:text-4xl font-bold text-white font-mono">{metrics.processBacklog}</div>
@@ -652,7 +835,7 @@ export default function HeroCanvas() {
             </div>
             <div className="relative z-10">
               <div className="flex items-center gap-2 text-xs font-medium text-amber-400 uppercase tracking-wider mb-2">
-                <span className="w-1.5 h-1.5 bg-amber-400 rounded-full" aria-hidden="true" />
+                <span className="w-1.5 h-1.5 bg-amber-400 rounded-full animate-pulse" aria-hidden="true" />
                 DELIVER OUTFLOW
               </div>
               <div className="text-3xl lg:text-4xl font-bold text-white font-mono">{metrics.deliverOutflow.toFixed(1)}</div>
@@ -668,7 +851,7 @@ export default function HeroCanvas() {
         }}>
           <canvas
             ref={canvasRef}
-            className="w-full h-full glass rounded-2xl border-red-500/10"
+            className="w-full h-full glass rounded-2xl border-red-500/10 cursor-crosshair"
             aria-label="4-stage GTM data automation pipeline: INGEST → PROCESS → PERSIST → DELIVER"
             role="img"
           />
@@ -682,8 +865,9 @@ export default function HeroCanvas() {
           <div className="flex items-center justify-between mb-6">
             <h3 className="text-lg lg:text-xl font-bold text-white">Pipeline Control Dashboard</h3>
             <div className="flex items-center gap-3 text-xs">
-              <span className="px-2 py-1 rounded-full bg-red-500/20 text-red-400">LIVE</span>
+              <span className="px-2 py-1 rounded-full bg-red-500/20 text-red-400 animate-pulse">LIVE</span>
               <span className="px-2 py-1 rounded-full bg-green-500/20 text-green-400">REACTIVE</span>
+              <span className="px-2 py-1 rounded-full bg-amber-500/20 text-amber-400">3D</span>
             </div>
           </div>
 
@@ -691,7 +875,7 @@ export default function HeroCanvas() {
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <label htmlFor="traffic-load" className="flex items-center gap-2 text-sm font-medium text-white">
-                  <span className="w-2 h-2 bg-red-400 rounded-full" aria-hidden="true" />
+                  <span className="w-2 h-2 bg-red-400 rounded-full animate-pulse" aria-hidden="true" />
                   Traffic Load
                 </label>
                 <span className="text-lg font-mono font-bold text-red-300 bg-red-500/10 px-3 py-1 rounded-lg">
@@ -723,7 +907,7 @@ export default function HeroCanvas() {
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <label htmlFor="processing-efficiency" className="flex items-center gap-2 text-sm font-medium text-white">
-                  <span className="w-2 h-2 bg-orange-400 rounded-full" aria-hidden="true" />
+                  <span className="w-2 h-2 bg-orange-400 rounded-full animate-pulse" aria-hidden="true" />
                   Processing Efficiency
                 </label>
                 <span className="text-lg font-mono font-bold text-orange-300 bg-orange-500/10 px-3 py-1 rounded-lg">
@@ -755,7 +939,7 @@ export default function HeroCanvas() {
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <label htmlFor="delivery-speed" className="flex items-center gap-2 text-sm font-medium text-white">
-                  <span className="w-2 h-2 bg-amber-400 rounded-full" aria-hidden="true" />
+                  <span className="w-2 h-2 bg-amber-400 rounded-full animate-pulse" aria-hidden="true" />
                   Delivery Speed
                 </label>
                 <span className="text-lg font-mono font-bold text-amber-300 bg-amber-500/10 px-3 py-1 rounded-lg">

@@ -1,13 +1,14 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Mail, Linkedin, Github, MessageSquare, MapPin, Clock, Send, ArrowUpRight, CheckCircle, Play, Loader2 } from "lucide-react";
+import { Mail, Linkedin, Github, MessageSquare, MapPin, Clock, Send, ArrowUpRight, CheckCircle, Play, Loader2, Mail as MailIcon, ExternalLink } from "lucide-react";
 
 const FORMSPREE_ENDPOINT = "https://formspree.io/f/your-form-id";
 
 export default function Contact() {
   const [isVisible, setIsVisible] = useState(false);
   const [formStatus, setFormStatus] = useState<'idle' | 'submitting' | 'success' | 'error'>('idle');
+  const [formData, setFormData] = useState({ name: '', company: '', email: '', message: '' });
 
   useEffect(() => {
     const observer = new IntersectionObserver(
@@ -25,17 +26,15 @@ export default function Contact() {
     return () => observer.disconnect();
   }, []);
 
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    setFormData(prev => ({ ...prev, [e.target.name]: e.target.value }));
+  };
+
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setFormStatus('submitting');
 
-    const formData = new FormData(e.currentTarget);
-    const data = {
-      name: formData.get('name'),
-      company: formData.get('company'),
-      email: formData.get('email'),
-      message: formData.get('message'),
-    };
+    const data = { ...formData };
 
     try {
       const response = await fetch(FORMSPREE_ENDPOINT, {
@@ -49,16 +48,22 @@ export default function Contact() {
 
       if (response.ok) {
         setFormStatus('success');
-        e.currentTarget.reset();
+        setFormData({ name: '', company: '', email: '', message: '' });
         setTimeout(() => setFormStatus('idle'), 5000);
       } else {
-        setFormStatus('error');
-        setTimeout(() => setFormStatus('idle'), 5000);
+        throw new Error('Formspree submission failed');
       }
     } catch {
       setFormStatus('error');
-      setTimeout(() => setFormStatus('idle'), 5000);
     }
+  };
+
+  const handleMailtoFallback = () => {
+    const { name, company, email, message } = formData;
+    const subject = `Automation Inquiry from ${name}`;
+    const body = `Company: ${company}\n\nOperational Bottleneck:\n${message}\n\n---Reply to: ${email}---`;
+    const mailtoLink = `mailto:kchanchan2357@gmail.com?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+    window.location.href = mailtoLink;
   };
 
   return (
@@ -157,6 +162,8 @@ export default function Contact() {
                       id="name"
                       name="name"
                       required
+                      value={formData.name}
+                      onChange={handleInputChange}
                       className="w-full px-4 py-3 rounded-xl glass border-white/10 focus:border-red-500/50 focus:ring-2 focus:ring-red-500/50 focus:outline-none text-white placeholder:text-muted/50 transition-all duration-300"
                       placeholder="Your name"
                     />
@@ -167,6 +174,8 @@ export default function Contact() {
                       type="text"
                       id="company"
                       name="company"
+                      value={formData.company}
+                      onChange={handleInputChange}
                       className="w-full px-4 py-3 rounded-xl glass border-white/10 focus:border-red-500/50 focus:ring-2 focus:ring-red-500/50 focus:outline-none text-white placeholder:text-muted/50 transition-all duration-300"
                       placeholder="Company name (optional)"
                     />
@@ -180,6 +189,8 @@ export default function Contact() {
                     id="email"
                     name="email"
                     required
+                    value={formData.email}
+                    onChange={handleInputChange}
                     className="w-full px-4 py-3 rounded-xl glass border-white/10 focus:border-red-500/50 focus:ring-2 focus:ring-red-500/50 focus:outline-none text-white placeholder:text-muted/50 transition-all duration-300"
                     placeholder="you@company.com"
                   />
@@ -192,6 +203,8 @@ export default function Contact() {
                     name="message"
                     rows={5}
                     required
+                    value={formData.message}
+                    onChange={handleInputChange}
                     className="w-full px-4 py-3 rounded-xl glass border-white/10 focus:border-red-500/50 focus:ring-2 focus:ring-red-500/50 focus:outline-none text-white placeholder:text-muted/50 transition-all duration-300 resize-none"
                     placeholder="Describe the bottleneck, manual process, or integration gap you're facing..."
                   />
@@ -232,9 +245,21 @@ export default function Contact() {
 
               {formStatus === 'error' && (
                 <div className="mt-6 p-4 rounded-xl glass border-red-500/30 bg-red-500/10" role="alert">
-                  <div className="flex items-center gap-3 text-red-400">
-                    <span className="w-5 h-5" aria-hidden="true">⚠</span>
-                    <span className="font-medium">Failed to send. Please try again or email directly at kchanchan2357@gmail.com</span>
+                  <div className="flex flex-col gap-3 text-red-400">
+                    <div className="flex items-center gap-3">
+                      <span className="w-5 h-5" aria-hidden="true">⚠</span>
+                      <span className="font-medium">Formspree submission failed. Your data is safe below.</span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={handleMailtoFallback}
+                      className="w-full group flex items-center justify-center gap-3 px-6 py-4 rounded-xl font-semibold text-white bg-gradient-to-r from-red-600 to-red-500 border border-red-400/50 hover:from-red-500 hover:to-red-400 hover:shadow-[0_0_30px_rgba(220,38,38,0.6)] transition-all duration-300 focus-ring"
+                    >
+                      <MailIcon className="w-5 h-5" aria-hidden="true" />
+                      <span>👉 Send via Direct Email Client</span>
+                      <ExternalLink className="w-4 h-4 transition-transform group-hover:translate-x-1" aria-hidden="true" />
+                    </button>
+                    <p className="text-xs text-muted/70 text-center">Opens your email app with all details pre-filled</p>
                   </div>
                 </div>
               )}

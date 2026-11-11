@@ -31,7 +31,7 @@ export default function SparkTrail() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const animationRef = useRef<number | null>(null);
   const sparksRef = useRef<Spark[]>([]);
-  const [mousePos, setMousePos] = useState({ x: -1000, y: -1000 });
+  const mousePosRef = useRef({ x: -1000, y: -1000 });
   const timeRef = useRef(0);
   const widthRef = useRef(0);
   const heightRef = useRef(0);
@@ -141,8 +141,8 @@ export default function SparkTrail() {
       ctx.fillRect(0, 0, w, h);
 
       // Add sparks at mouse position
-      if (mousePos.x > 0 && mousePos.y > 0) {
-        addSpark(mousePos.x, mousePos.y);
+      if (mousePosRef.current.x > 0 && mousePosRef.current.y > 0) {
+        addSpark(mousePosRef.current.x, mousePosRef.current.y);
       }
 
       // Update and draw sparks
@@ -198,12 +198,12 @@ export default function SparkTrail() {
     animate();
 
     const handleMouseMove = (e: MouseEvent) => {
-      setMousePos({ x: e.clientX, y: e.clientY });
+      mousePosRef.current = { x: e.clientX, y: e.clientY };
     };
 
     const handleTouchMove = (e: TouchEvent) => {
       if (e.touches.length > 0) {
-        setMousePos({ x: e.touches[0].clientX, y: e.touches[0].clientY });
+        mousePosRef.current = { x: e.touches[0].clientX, y: e.touches[0].clientY };
       }
     };
 
@@ -221,7 +221,7 @@ export default function SparkTrail() {
       window.removeEventListener("resize", handleResize);
       if (animationRef.current) cancelAnimationFrame(animationRef.current);
     };
-  }, [mousePos]);
+  }, []);
 
   return (
     <canvas

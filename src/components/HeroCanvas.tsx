@@ -5,10 +5,10 @@ import { useEffect, useRef, useState } from "react";
 const STAGE_NAMES = ["INGEST", "PROCESS", "PERSIST", "DELIVER"] as const;
 
 const STAGE_COLORS = {
-  INGEST: { main: "#6366f1", glow: "rgba(99, 102, 241,", second: "#a855f7" },
-  PROCESS: { main: "#22c55e", glow: "rgba(34, 197, 94,", second: "#86efac" },
-  PERSIST: { main: "#a855f7", glow: "rgba(168, 85, 247,", second: "#c084fc" },
-  DELIVER: { main: "#f59e0b", glow: "rgba(245, 158, 11,", second: "#fef3c7" },
+  INGEST: { main: "#6366f1", second: "#a855f7", glow: "rgba(99, 102, 241," },
+  PROCESS: { main: "#22c55e", second: "#86efac", glow: "rgba(34, 197, 94," },
+  PERSIST: { main: "#a855f7", second: "#c084fc", glow: "rgba(168, 85, 247," },
+  DELIVER: { main: "#f59e0b", second: "#fef3c7", glow: "rgba(245, 158, 11," },
 };
 
 interface Particle {
@@ -16,27 +16,41 @@ interface Particle {
   y: number;
   vx: number;
   vy: number;
+  z: number; // depth for isometric perspective
   radius: number;
   opacity: number;
   color: string;
   type: string;
-  life: number;
-  maxLife: number;
   stage: number;
   targetX: number;
   targetY: number;
+  targetZ: number;
+  life: number;
+  maxLife: number;
+}
+
+interface BoxNode {
+  x: number;
+  y: number;
+  z: number;
+  width: number;
+  height: number;
+  color: string;
+  opacity: number;
+  stage: number;
+  pulse: number;
 }
 
 export default function HeroCanvas() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const animationRef = useRef<number | null>(null);
   const particlesRef = useRef<Particle[]>([]);
+  const boxesRef = useRef<BoxNode[]>([]);
   const [isVisible, setIsVisible] = useState(false);
   const timeRef = useRef(0);
   const widthRef = useRef(0);
   const heightRef = useRef(0);
   const dprRef = useRef(1);
-  const particleCountRef = useRef(0);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -66,207 +80,192 @@ export default function HeroCanvas() {
       const w = widthRef.current;
       const h = heightRef.current;
       particlesRef.current = [];
+      boxesRef.current = [];
 
       const stageX = [w * 0.12, w * 0.34, w * 0.56, w * 0.78];
       const stageY = h * 0.5;
 
-      // INGEST: chaotic intake cloud
-      for (let i = 0; i < 15; i++) {
-        particlesRef.current.push({
-          x: stageX[0] + (Math.random() - 0.5) * 90,
-          y: stageY + (Math.random() - 0.5) * 60,
-          vx: (Math.random() - 0.5) * 0.6,
-          vy: (Math.random() - 0.5) * 0.6,
-          radius: 1.5 + Math.random() * 2,
-          opacity: 0.2 + Math.random() * 0.4,
-          color: STAGE_COLORS.INGEST.main,
-          type: "chaos",
-          life: 0,
-          maxLife: 120 + Math.random() * 200,
-          stage: 0,
-          targetX: stageX[0],
-          targetY: stageY,
+      // Create glowing boxes for each stage (isometric perspective)
+      for (let s = 0; s < STAGES; s++) {
+        const colorObj = STAGE_COLORS[STAGE_NAMES[s]];
+        const boxW = s === 3 ? 90 : 60;
+        const boxH = s === 3 ? 45 : 30;
+        
+        // Front box
+        boxesRef.current.push({
+          x: stageX[s],
+          y: stageY,
+          z: 0,
+          width: boxW,
+          height: boxH,
+          color: colorObj.main,
+          opacity: 0.8,
+          stage: s,
+          pulse: Math.random() * Math.PI * 2,
+        });
+        
+        // Side box (isometric depth)
+        boxesRef.current.push({
+          x: stageX[s] + boxW * 0.15,
+          y: stageY - boxH * 0.3,
+          z: boxW * 0.15,
+          width: boxW * 0.6,
+          height: boxH * 0.5,
+          color: colorObj.second,
+          opacity: 0.4,
+          stage: s,
+          pulse: Math.random() * Math.PI * 2,
+        });
+        
+        // Top box (isometric depth)
+        boxesRef.current.push({
+          x: stageX[s] - boxW * 0.1,
+          y: stageY - boxH * 0.4,
+          z: -boxW * 0.1,
+          width: boxW * 0.6,
+          height: boxH * 0.5,
+          color: colorObj.main,
+          opacity: 0.2,
+          stage: s,
+          pulse: Math.random() * Math.PI * 2,
         });
       }
 
-      // PROCESS: ordered data matrix nodes
-      for (let i = 0; i < 8; i++) {
-        particlesRef.current.push({
-          x: stageX[1] + (i % 4 - 1.5) * 22,
-          y: stageY + Math.floor(i / 4) * 18 - 18,
-          vx: 0,
-          vy: 0,
-          radius: 2.5,
-          opacity: 0.6,
-          color: STAGE_COLORS.PROCESS.main,
-          type: "matrix",
-          life: 0,
-          maxLife: 9999,
-          stage: 1,
-          targetX: stageX[1] + (i % 4 - 1.5) * 22,
-          targetY: stageY + Math.floor(i / 4) * 18 - 18,
-        });
-      }
-
-      // PERSIST: purple circuit paths
-      for (let i = 0; i < 6; i++) {
-        const angle = (Math.PI * 2 * i) / 6;
-        const r = 22;
-        particlesRef.current.push({
-          x: stageX[2] + Math.cos(angle) * r,
-          y: stageY + Math.sin(angle) * r * 0.5,
-          vx: 0,
-          vy: 0,
-          radius: 2,
-          opacity: 0.5,
-          color: STAGE_COLORS.PERSIST.main,
-          type: "circuit",
-          life: 0,
-          maxLife: 9999,
-          stage: 2,
-          targetX: stageX[2] + Math.cos(angle) * r,
-          targetY: stageY + Math.sin(angle) * r * 0.5,
-        });
-      }
-
-      // DELIVER: golden outputs with bloom (limited count for performance)
-      for (let i = 0; i < 12; i++) {
-        const angle = (Math.PI * 2 * i) / 12;
-        const r = 28;
-        particlesRef.current.push({
-          x: stageX[3] + Math.cos(angle) * r,
-          y: stageY + Math.sin(angle) * r * 0.4,
-          vx: 0,
-          vy: 0,
-          radius: 2 + Math.random() * 2,
-          opacity: 0.7,
-          color: STAGE_COLORS.DELIVER.main,
-          type: "output",
-          life: 0,
-          maxLife: 9999,
-          stage: 3,
-          targetX: stageX[3] + Math.cos(angle) * r,
-          targetY: stageY + Math.sin(angle) * r * 0.4,
-        });
-      }
-
-      // Flowing data packets moving between stages
-      for (let s = 0; s < STAGES - 1; s++) {
-        for (let i = 0; i < 4; i++) {
-          const progress = i / 4;
+      // Create particles that flow through stages
+      const particlesPerStage = 12;
+      for (let s = 0; s < STAGES; s++) {
+        const colorObj = STAGE_COLORS[STAGE_NAMES[s]];
+        for (let i = 0; i < particlesPerStage; i++) {
+          const angle = (Math.PI * 2 * i) / particlesPerStage;
+          const r = 25 + Math.random() * 15;
+          
           particlesRef.current.push({
-            x: stageX[s] + (stageX[s + 1] - stageX[s]) * progress,
-            y: stageY + (Math.random() - 0.5) * 8,
-            vx: 0.4 + s * 0.1,
-            vy: Math.sin(timeRef.current + progress * 10) * 0.15,
-            radius: 1.5,
-            opacity: 0.5,
-            color: STAGE_COLORS[STAGE_NAMES[s]].main,
-            type: "packet",
+            x: stageX[s] + Math.cos(angle) * r,
+            y: stageY + Math.sin(angle) * r * 0.6,
+            z: Math.random() * 40 - 20,
+            vx: 0,
+            vy: 0,
+            radius: 1.5 + Math.random() * 1.5,
+            opacity: 0.4 + Math.random() * 0.4,
+            color: colorObj.main,
+            type: "orbit",
+            stage: s,
+            targetX: stageX[s],
+            targetY: stageY,
+            targetZ: 0,
             life: 0,
             maxLife: 9999,
-            stage: s,
-            targetX: stageX[s + 1],
-            targetY: stageY,
           });
         }
       }
 
-      particleCountRef.current = particlesRef.current.length;
+      // Flowing packets between stages (smooth, not too fast)
+      for (let s = 0; s < STAGES - 1; s++) {
+        const startColor = STAGE_COLORS[STAGE_NAMES[s]];
+        const endColor = STAGE_COLORS[STAGE_NAMES[s + 1]];
+        for (let i = 0; i < 5; i++) {
+          const progress = i / 5;
+          particlesRef.current.push({
+            x: stageX[s] + (stageX[s + 1] - stageX[s]) * progress,
+            y: stageY + (Math.random() - 0.5) * 10,
+            z: 0,
+            vx: 0.25 + s * 0.05, // Slow speed to avoid lag
+            vy: 0,
+            radius: 2,
+            opacity: 0.6,
+            color: startColor.main,
+            type: "packet",
+            stage: s,
+            targetX: stageX[s + 1],
+            targetY: stageY,
+            targetZ: 0,
+            life: 0,
+            maxLife: 9999,
+          });
+        }
+      }
     };
 
-    const drawIsometricGrid = (ctx: CanvasRenderingContext2D, w: number, h: number) => {
-      const gridSize = 60;
-      ctx.strokeStyle = "rgba(99, 102, 241, 0.06)";
-      ctx.lineWidth = 1;
-      
-      for (let x = 0; x <= w; x += gridSize) {
-        ctx.beginPath();
-        ctx.moveTo(x, 0);
-        ctx.lineTo(x, h);
-        ctx.stroke();
-      }
-      for (let y = 0; y <= h; y += gridSize) {
-        ctx.beginPath();
-        ctx.moveTo(0, y);
-        ctx.lineTo(w, y);
-        ctx.stroke();
-      }
-    };
-
-    const drawStage = (
+    // Draw isometric box with 3D perspective
+    const drawIsometricBox = (
       ctx: CanvasRenderingContext2D,
-      w: number,
-      h: number,
-      stageIdx: number,
-      colorObj: { main: string; glow: string; second: string },
-      label: string
+      box: BoxNode,
+      colorObj: { main: string; second: string; glow: string }
     ) => {
-      const x = [w * 0.12, w * 0.34, w * 0.56, w * 0.78][stageIdx];
-      const y = h * 0.5;
+      const { x, y, width, height, opacity } = box;
+      const depth = width * 0.25;
       
-      // Isometric diamond base
-      const diamondW = stageIdx === 3 ? 100 : 70;
-      const diamondH = stageIdx === 3 ? 50 : 35;
-      
+      // Save context for depth sorting
       ctx.save();
-      ctx.translate(x, y);
+      ctx.globalAlpha = opacity;
       
-      // Floor grid under stage
-      ctx.strokeStyle = `${colorObj.glow}0.15)`;
+      // Top face (darker)
+      const topGrad = ctx.createLinearGradient(
+        x - depth / 2, y - height / 2,
+        x + width / 2, y - height / 2 - depth / 2
+      );
+      topGrad.addColorStop(0, `${colorObj.main}40`);
+      topGrad.addColorStop(1, `${colorObj.main}20`);
+      ctx.fillStyle = topGrad;
+      ctx.beginPath();
+      ctx.moveTo(x - depth / 2, y - height / 2 - depth / 4);
+      ctx.lineTo(x + width + depth / 2, y - height / 2 - depth / 4);
+      ctx.lineTo(x + width, y - height / 2);
+      ctx.lineTo(x, y - height / 2);
+      ctx.closePath();
+      ctx.fill();
+      
+      // Right face (darker side)
+      const sideGrad = ctx.createLinearGradient(
+        x + width, y - height / 2,
+        x + width + depth / 2, y + height / 2 - depth / 4
+      );
+      sideGrad.addColorStop(0, `${colorObj.second}30`);
+      sideGrad.addColorStop(1, `${colorObj.second}15`);
+      ctx.fillStyle = sideGrad;
+      ctx.beginPath();
+      ctx.moveTo(x + width, y - height / 2);
+      ctx.lineTo(x + width + depth / 2, y - height / 2 - depth / 4);
+      ctx.lineTo(x + width + depth / 2, y + height / 2 - depth / 4);
+      ctx.lineTo(x + width, y + height / 2);
+      ctx.closePath();
+      ctx.fill();
+      
+      // Front face (brightest)
+      const frontGrad = ctx.createLinearGradient(
+        x, y - height / 2,
+        x + width, y + height / 2
+      );
+      frontGrad.addColorStop(0, `${colorObj.main}90`);
+      frontGrad.addColorStop(0.5, `${colorObj.main}60`);
+      frontGrad.addColorStop(1, `${colorObj.main}40`);
+      ctx.fillStyle = frontGrad;
+      ctx.beginPath();
+      ctx.moveTo(x, y - height / 2);
+      ctx.lineTo(x + width, y - height / 2);
+      ctx.lineTo(x + width, y + height / 2);
+      ctx.lineTo(x, y + height / 2);
+      ctx.closePath();
+      ctx.fill();
+      
+      // Glowing border
+      ctx.strokeStyle = `${colorObj.main}${Math.floor(opacity * 200).toString(16).padStart(2, '0')}`;
       ctx.lineWidth = 1;
       ctx.beginPath();
-      ctx.moveTo(-diamondW, 0);
-      ctx.lineTo(0, -diamondH / 2);
-      ctx.lineTo(diamondW, 0);
-      ctx.lineTo(0, diamondH / 2);
+      ctx.moveTo(x, y - height / 2);
+      ctx.lineTo(x + width, y - height / 2);
+      ctx.lineTo(x + width, y + height / 2);
+      ctx.lineTo(x, y + height / 2);
       ctx.closePath();
       ctx.stroke();
       
-      // Stage label
-      ctx.font = "600 11px 'Geist Mono', monospace";
-      ctx.fillStyle = colorObj.main;
+      // Stage label on front
+      ctx.font = "bold 10px 'Geist Mono', monospace";
+      ctx.fillStyle = "#ffffff";
       ctx.textAlign = "center";
-      ctx.fillText(label, 0, -diamondH - 14);
-      
-      // Sub label
-      const subLabels = {
-        INGEST: "Load Capture",
-        PROCESS: "AI Processing",
-        PERSIST: "DB Storage",
-        DELIVER: "API Dispatch",
-      };
-      ctx.font = "500 9px 'Geist', sans-serif";
-      ctx.fillStyle = "rgba(148, 163, 184, 0.5)";
-      ctx.fillText(subLabels[label as keyof typeof subLabels], 0, -diamondH - 4);
+      ctx.fillText(STAGE_NAMES[box.stage], x + width / 2, y - 2);
       
       ctx.restore();
-
-      // Bloom for DELIVER only (performance optimization)
-      if (stageIdx === 3) {
-        const bloomGrad = ctx.createRadialGradient(x, y, 0, x, y, 90);
-        bloomGrad.addColorStop(0, `${colorObj.glow}0.35)`);
-        bloomGrad.addColorStop(0.5, `${colorObj.glow}0.12)`);
-        bloomGrad.addColorStop(1, `${colorObj.glow}0)`);
-        ctx.fillStyle = bloomGrad;
-        ctx.beginPath();
-        ctx.arc(x, y, 90, 0, Math.PI * 2);
-        ctx.fill();
-        
-        // Lens flare accent
-        const flareGrad = ctx.createLinearGradient(x - 40, y - 40, x + 40, y + 40);
-        flareGrad.addColorStop(0, "rgba(254, 243, 199, 0)");
-        flareGrad.addColorStop(0.5, "rgba(254, 243, 199, 0.15)");
-        flareGrad.addColorStop(1, "rgba(254, 243, 199, 0)");
-        ctx.fillStyle = flareGrad;
-        ctx.beginPath();
-        ctx.moveTo(x - 50, y - 50);
-        ctx.lineTo(x + 50, y - 30);
-        ctx.lineTo(x + 30, y + 30);
-        ctx.lineTo(x - 30, y + 50);
-        ctx.closePath();
-        ctx.fill();
-      }
     };
 
     const drawConnections = (ctx: CanvasRenderingContext2D, w: number, h: number) => {
@@ -276,14 +275,14 @@ export default function HeroCanvas() {
       for (let i = 0; i < stageX.length - 1; i++) {
         const colorObj = STAGE_COLORS[STAGE_NAMES[i]];
         const grad = ctx.createLinearGradient(stageX[i], stageY, stageX[i + 1], stageY);
-        grad.addColorStop(0, `${colorObj.glow}0.2)`);
-        grad.addColorStop(0.5, `${colorObj.glow}0.4)`);
-        grad.addColorStop(1, `${colorObj.glow}0.2)`);
+        grad.addColorStop(0, `${colorObj.glow}0.15)`);
+        grad.addColorStop(0.5, `${colorObj.glow}0.35)`);
+        grad.addColorStop(1, `${colorObj.glow}0.15)`);
         
         ctx.strokeStyle = grad;
         ctx.lineWidth = 2;
-        ctx.setLineDash([10, 10]);
-        ctx.lineDashOffset = -timeRef.current * 30;
+        ctx.setLineDash([8, 8]);
+        ctx.lineDashOffset = -timeRef.current * 20;
         ctx.beginPath();
         ctx.moveTo(stageX[i], stageY);
         ctx.lineTo(stageX[i + 1], stageY);
@@ -303,80 +302,96 @@ export default function HeroCanvas() {
       ctx.fillStyle = "#020617";
       ctx.fillRect(0, 0, w, h);
       
-      // Isometric grid
-      drawIsometricGrid(ctx, w, h);
+      // Isometric grid background
+      ctx.strokeStyle = "rgba(99, 102, 241, 0.04)";
+      ctx.lineWidth = 1;
+      const gridSize = 50;
+      for (let x = 0; x <= w; x += gridSize) {
+        ctx.beginPath();
+        ctx.moveTo(x, 0);
+        ctx.lineTo(x, h);
+        ctx.stroke();
+      }
+      for (let y = 0; y <= h; y += gridSize) {
+        ctx.beginPath();
+        ctx.moveTo(0, y);
+        ctx.lineTo(w, y);
+        ctx.stroke();
+      }
       
       // Connections between stages
       drawConnections(ctx, w, h);
       
-      // Draw each stage
-      drawStage(ctx, w, h, 0, STAGE_COLORS.INGEST, "INGEST");
-      drawStage(ctx, w, h, 1, STAGE_COLORS.PROCESS, "PROCESS");
-      drawStage(ctx, w, h, 2, STAGE_COLORS.PERSIST, "PERSIST");
-      drawStage(ctx, w, h, 3, STAGE_COLORS.DELIVER, "DELIVER");
+      // Sort boxes by depth for proper 3D rendering
+      const sortedBoxes = [...boxesRef.current].sort((a, b) => a.z - b.z);
       
-      // Update particles
+      // Draw all boxes
+      sortedBoxes.forEach((box) => {
+        const colorObj = STAGE_COLORS[STAGE_NAMES[box.stage]];
+        box.pulse += 0.02;
+        const pulseScale = 1 + Math.sin(box.pulse) * 0.05;
+        
+        drawIsometricBox(ctx, {
+          ...box,
+          width: box.width * pulseScale,
+          height: box.height * pulseScale,
+        }, colorObj);
+      });
+      
+      // Update and draw particles
       const newParticles: Particle[] = [];
       
       particlesRef.current.forEach((p) => {
-        if (p.type === "chaos") {
-          p.x += p.vx;
-          p.y += p.vy;
-          p.life++;
+        if (p.type === "orbit") {
+          // Orbit around stage center
+          const stageX = [w * 0.12, w * 0.34, w * 0.56, w * 0.78][p.stage];
+          const stageY = h * 0.5;
+          const angle = timeRef.current * (0.5 + p.stage * 0.1) + p.life * 0.05;
+          const r = 25 + Math.sin(timeRef.current * 0.5 + p.life * 0.1) * 5;
           
-          // Bounce within chaos zone
-          if (Math.abs(p.x - p.targetX) > 45) p.vx *= -1;
-          if (Math.abs(p.y - p.targetY) > 30) p.vy *= -1;
+          p.x = stageX + Math.cos(angle) * r;
+          p.y = stageY + Math.sin(angle) * r * 0.6;
+          p.z = Math.sin(timeRef.current + p.life * 0.05) * 15;
           
           // Pulse opacity
-          p.opacity = 0.2 + 0.4 * Math.abs(Math.sin(timeRef.current * 2 + p.life * 0.05));
+          p.opacity = 0.3 + 0.5 * Math.abs(Math.sin(timeRef.current * 2 + p.life * 0.1));
           
-          newParticles.push(p);
-        }
-        else if (p.type === "matrix") {
-          // Subtle pulse
-          p.opacity = 0.5 + 0.3 * Math.abs(Math.sin(timeRef.current * 1.5 + p.life * 0.03));
-          p.y = p.targetY + Math.sin(timeRef.current + p.life * 0.1) * 2;
-          newParticles.push(p);
-        }
-        else if (p.type === "circuit") {
-          p.opacity = 0.4 + 0.4 * Math.abs(Math.sin(timeRef.current * 1 + p.life * 0.05));
-          newParticles.push(p);
-        }
-        else if (p.type === "output") {
-          // Deliver: bright pulsing with bloom
-          p.opacity = 0.6 + 0.4 * Math.abs(Math.sin(timeRef.current * 3 + p.life * 0.08));
-          p.y = p.targetY + Math.sin(timeRef.current * 2 + p.life * 0.1) * 3;
           newParticles.push(p);
         }
         else if (p.type === "packet") {
-          // Moving packet between stages
+          // Flow between stages
           p.x += p.vx;
-          p.y += p.vy;
-          p.life++;
           
-          // Loop back
-          if (p.x > p.targetX + 40) {
-            p.x = [w * 0.12, w * 0.34, w * 0.56][p.stage] - 40;
+          // Reset when past next stage
+          if (p.x > p.targetX + 20) {
+            p.x = [w * 0.12, w * 0.34, w * 0.56][p.stage] - 20;
             p.life = 0;
           }
+          
+          // Gentle bobbing
+          p.y = p.targetY + Math.sin(timeRef.current * 2 + p.life * 0.1) * 3;
+          
+          // Pulse
+          p.opacity = 0.4 + 0.4 * Math.abs(Math.sin(timeRef.current * 3 + p.life * 0.1));
           
           newParticles.push(p);
         }
       });
       
-      // Draw particles with minimal bloom (no shadowBlur for performance)
+      particlesRef.current = newParticles;
+      
+      // Draw particles with minimal glow (no shadowBlur for performance)
       newParticles.forEach((p) => {
         const r = p.radius;
         
-        // Outer glow (only for output type)
-        if (p.type === "output") {
-          const grad = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, r * 6);
+        // Outer glow
+        if (p.type === "packet") {
+          const grad = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, r * 5);
           grad.addColorStop(0, `${p.color}${Math.floor(p.opacity * 150).toString(16).padStart(2, '0')}`);
           grad.addColorStop(1, `${p.color}00`);
           ctx.fillStyle = grad;
           ctx.beginPath();
-          ctx.arc(p.x, p.y, r * 6, 0, Math.PI * 2);
+          ctx.arc(p.x, p.y, r * 5, 0, Math.PI * 2);
           ctx.fill();
         }
         
@@ -390,7 +405,27 @@ export default function HeroCanvas() {
         ctx.fill();
       });
       
-      particlesRef.current = newParticles;
+      // Draw stage labels below boxes
+      const stageLabels = {
+        INGEST: "Raw Data Intake",
+        PROCESS: "AI Processing",
+        PERSIST: "Storage & Sync",
+        DELIVER: "Automated Output",
+      };
+      
+      const stageX = [w * 0.12, w * 0.34, w * 0.56, w * 0.78];
+      stageX.forEach((x, i) => {
+        const colorObj = STAGE_COLORS[STAGE_NAMES[i]];
+        ctx.font = "600 9px 'Geist Mono', monospace";
+        ctx.fillStyle = colorObj.main;
+        ctx.textAlign = "center";
+        ctx.fillText(stageLabels[STAGE_NAMES[i]], x, h * 0.5 + 60);
+        
+        ctx.font = "500 8px 'Geist', sans-serif";
+        ctx.fillStyle = "rgba(148, 163, 184, 0.5)";
+        ctx.fillText(`Tier ${i + 1} of 4`, x, h * 0.5 + 72);
+      });
+      
       animationRef.current = requestAnimationFrame(animate);
     };
 
@@ -407,6 +442,10 @@ export default function HeroCanvas() {
           p.y = (p.y / prevH) * heightRef.current;
           p.targetX = (p.targetX / prevW) * widthRef.current;
           p.targetY = (p.targetY / prevH) * heightRef.current;
+        });
+        boxesRef.current.forEach(b => {
+          b.x = (b.x / prevW) * widthRef.current;
+          b.y = (b.y / prevH) * heightRef.current;
         });
       }
     };

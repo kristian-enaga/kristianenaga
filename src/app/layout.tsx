@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
+import SparkTrail from "../components/SparkTrail";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -54,9 +55,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
       </head>
-      <body className="min-h-full flex flex-col relative z-10">
-        {children}
-      </body>
+<body className="min-h-full flex flex-col relative z-10">
+    <SparkTrail />
+    {children}
+  </body>
     </html>
   );
 }

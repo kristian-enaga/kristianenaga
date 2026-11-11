@@ -4,6 +4,7 @@ import ProjectSection from "@/components/ProjectSection";
 import Approach from "@/components/Approach";
 import Contact from "@/components/Contact";
 import Footer from "@/components/Footer";
+import MouseTrail from "@/components/MouseTrail";
 
 export default function Home() {
   return (
@@ -15,6 +16,7 @@ export default function Home() {
         <Approach />
         <Contact />
       </main>
+      <MouseTrail />
       <Footer />
     </>
   );

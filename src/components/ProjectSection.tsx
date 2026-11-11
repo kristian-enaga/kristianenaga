@@ -383,14 +383,14 @@ export default function ProjectSection() {
 
             {/* Sidebar Content */}
             <div
-              className="fixed inset-y-0 right-0 z-50 w-full max-w-[460px] transform transition-transform duration-500 ease-out-cubic translate-x-0 pointer-events-auto bg-white/5 border-l border-white/10 shadow-2xl"
+              className="fixed inset-y-0 right-0 z-50 w-full max-w-[460px] transform transition-transform duration-500 ease-out-cubic translate-x-0 pointer-events-auto bg-white/5 border-l border-white/10 shadow-2xl flex flex-col"
               role="dialog"
               aria-modal="true"
               aria-labelledby="sidebar-title"
-              style={{ backdropFilter: "blur(20px)", background: "rgba(2, 6, 23, 0.95)" }}
+              style={{ backdropFilter: "blur(20px)", background: "rgba(2, 6, 23, 0.95)", height: "100vh", maxHeight: "100vh" }}
             >
-              {/* Header */}
-              <div className="p-5 border-b border-white/10 flex items-center justify-between relative">
+              {/* Header - fixed at top */}
+              <div className="flex-shrink-0 p-5 border-b border-white/10 flex items-center justify-between relative z-10">
                 <div className="relative z-10">
                   <h3 id="sidebar-title" className="text-xl font-bold text-white">System {selectedProject.number}</h3>
                   <p className="text-xs font-medium text-white/70 mt-0.5 uppercase tracking-wider">{selectedProject.category}</p>
@@ -404,8 +404,8 @@ export default function ProjectSection() {
                 </button>
               </div>
 
-              {/* Scrollable Content */}
-              <div className="flex-1 overflow-y-auto p-5 lg:p-6 space-y-6">
+              {/* Scrollable Content - proper flex containment */}
+              <div className="flex-1 overflow-y-auto max-h-[calc(100vh-80px)] p-5 lg:p-6 space-y-6 custom-scrollbar">
                 
                 {/* Title */}
                 <div className="relative z-10">

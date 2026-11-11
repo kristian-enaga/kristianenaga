@@ -1,5 +1,5 @@
 import Header from "@/components/Header";
-import HeroCanvas from "@/components/HeroCanvas";
+import HeroCanvasWrapper from "@/components/HeroCanvasWrapper";
 import ProjectSection from "@/components/ProjectSection";
 import Approach from "@/components/Approach";
 import Contact from "@/components/Contact";
@@ -10,7 +10,7 @@ export default function Home() {
     <>
       <Header />
       <main className="flex-1 relative z-10">
-        <HeroCanvas />
+        <HeroCanvasWrapper />
         <ProjectSection />
         <Approach />
         <Contact />

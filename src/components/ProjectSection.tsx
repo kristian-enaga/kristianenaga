@@ -295,7 +295,7 @@ export default function ProjectSection() {
                   e.stopPropagation();
                   openProject(project);
                 }}
-                className="relative rounded-2xl p-5 lg:p-6 overflow-hidden transition-all duration-500 ease-out cursor-pointer group animate-fade-in-up"
+                className="relative rounded-2xl p-5 lg:p-6 overflow-hidden transition-all duration-500 ease-out cursor-pointer group animate-card-entrance"
                 style={{
                   animationDelay: `${delay}ms`,
                   animationDuration: '600ms',

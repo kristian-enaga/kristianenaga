@@ -223,3 +223,14 @@ body::before {
 ::-webkit-scrollbar-thumb:hover {
   background: linear-gradient(180deg, var(--accent-cyan), var(--accent-mint));
 }
+
+@keyframes cardEntrance {
+  from {
+    opacity: 0;
+    transform: translateY(40px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

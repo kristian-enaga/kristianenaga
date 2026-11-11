@@ -282,7 +282,7 @@ export default function ProjectSection() {
           {projectsData.map((project, index) => {
             const color = colorObj(project.category).main;
             const second = colorObj(project.category).second;
-            const delay = (index + 1) * 100;
+            const staggerDelay = index * 0.08;
             return (
               <article
                 key={project.id}
@@ -297,9 +297,11 @@ export default function ProjectSection() {
                 }}
                 className="relative rounded-2xl p-5 lg:p-6 overflow-hidden transition-all duration-500 ease-out cursor-pointer group animate-card-entrance"
                 style={{
-                  animationDelay: `${delay}ms`,
-                  animationDuration: '600ms',
+                  animationDelay: `${staggerDelay}s`,
+                  animationDuration: '0.5s',
                   animationFillMode: 'both',
+                  animationName: "cardEntrance",
+                  animationTimingFunction: "ease-out",
                   border: `1px solid ${color}30`,
                   background: `linear-gradient(145deg, ${color}15, ${color}08, ${second}05)`,
                   boxShadow: `0 0 20px ${color}10, inset 0 1px 0 rgba(255,255,255,0.06)`,

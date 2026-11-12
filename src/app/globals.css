@@ -119,6 +119,16 @@
   to { opacity: 1; transform: translateY(0) scale(1); }
 }
 
+@keyframes shimmer {
+  0% { transform: translateX(-100%) translateY(-100%) rotate(15deg); }
+  100% { transform: translateX(200%) translateY(200%) rotate(15deg); }
+}
+
+@keyframes borderPulse {
+  0%, 100% { box-shadow: 0 0 20px var(--color-mint)60, 0 0 40px var(--color-mint)40, 0 0 80px var(--color-mint)20; }
+  50% { box-shadow: 0 0 30px var(--color-mint)80, 0 0 60px var(--color-mint)60, 0 0 120px var(--color-mint)40; }
+}
+
 * {
   box-sizing: border-box;
 }

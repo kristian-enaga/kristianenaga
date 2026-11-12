@@ -328,20 +328,45 @@ export default function ProjectSection() {
                   transitionTimingFunction: 'cubic-bezier(0.16, 1, 0.3, 1)',
                   border: `1px solid ${color}30`,
                   background: `linear-gradient(145deg, ${color}15, ${color}08, ${second}05)`,
-                  boxShadow: `0 0 20px ${color}10, inset 0 1px 0 rgba(255,255,255,0.06)`,
+                  boxShadow: `0 0 30px ${color}15, 0 0 60px ${color}08, inset 0 1px 0 rgba(255,255,255,0.06)`,
                 }}
               >
-                {/* Hover glow effect */}
+                {/* Persistent ambient glow */}
                 <div
-                  className="absolute inset-0 rounded-2xl pointer-events-none transition-opacity duration-300 opacity-0 group-hover:opacity-100"
-                  style={{ background: `radial-gradient(circle at center, ${color}20 0%, ${color}00 70%)` }}
+                  className="absolute inset-0 rounded-2xl pointer-events-none opacity-30"
+                  style={{ background: `radial-gradient(ellipse at center, ${color}25 0%, ${color}00 70%)` }}
                   aria-hidden="true"
                 />
 
-                {/* Border glow on hover */}
+                {/* Animated shimmer sweep on hover */}
                 <div
-                  className="absolute -inset-px rounded-2xl pointer-events-none transition-opacity duration-300 opacity-0 group-hover:opacity-100"
-                  style={{ background: `linear-gradient(135deg, ${color}50, ${second}30)` }}
+                  className="absolute inset-0 rounded-2xl pointer-events-none overflow-hidden"
+                  aria-hidden="true"
+                >
+                  <div
+                    className="absolute -top-1/2 -left-1/2 w-full h-full animate-shimmer"
+                    style={{
+                      background: `linear-gradient(135deg, transparent 40%, ${color}30 50%, transparent 60%)`,
+                      transform: 'translateX(-100%)',
+                      transformOrigin: 'center',
+                    }}
+                  />
+                </div>
+
+                {/* Pulsing border glow on hover */}
+                <div
+                  className="absolute -inset-px rounded-2xl pointer-events-none transition-all duration-500 opacity-0 group-hover:opacity-100"
+                  style={{ 
+                    boxShadow: `0 0 20px ${color}60, 0 0 40px ${color}40, 0 0 80px ${color}20`,
+                    animation: 'borderPulse 2s ease-in-out infinite'
+                  }}
+                  aria-hidden="true"
+                />
+
+                {/* Inner content glow on hover */}
+                <div
+                  className="absolute inset-0 rounded-2xl pointer-events-none transition-opacity duration-500 opacity-0 group-hover:opacity-100"
+                  style={{ background: `radial-gradient(ellipse at center, ${color}15 0%, ${color}00 60%)` }}
                   aria-hidden="true"
                 />
 
@@ -354,20 +379,20 @@ export default function ProjectSection() {
                   </div>
 
                   {/* Business Benefit Badge */}
-                  <div className="mb-3 p-3 rounded-xl backdrop-blur-sm" style={{ background: `linear-gradient(135deg, ${color}18, ${color}08)`, border: `1px solid ${color}30` }}>
+                  <div className="mb-3 p-3 rounded-xl backdrop-blur-sm transition-all duration-300 group-hover:scale-[1.02] group-hover:shadow-lg" style={{ background: `linear-gradient(135deg, ${color}18, ${color}08)`, border: `1px solid ${color}30`, boxShadow: `0 0 20px ${color}20` }}>
                     <div className="flex items-center gap-2">
-                      <Zap className="w-3.5 h-3.5" style={{ color }} aria-hidden="true" />
+                      <Zap className="w-3.5 h-3.5 transition-transform group-hover:scale-110" style={{ color }} aria-hidden="true" />
                       <span className="text-xs font-semibold" style={{ color: `${color}dd` }}>
                         {project.businessRelevance}
                       </span>
                     </div>
                   </div>
 
-                  <h3 className="text-lg font-bold text-white mb-2 leading-tight">{project.title}</h3>
+                  <h3 className="text-lg font-bold text-white mb-2 leading-tight group-hover:text-mint transition-colors duration-300">{project.title}</h3>
 
                   <div className="mb-3 flex flex-wrap gap-1.5" role="list" aria-label="Technologies">
                     {project.tech.slice(0, 4).map((t, i) => (
-                      <span key={i} className="px-2 py-1 rounded text-[10px] font-medium text-white/85 backdrop-blur-sm transition-all duration-300 hover:scale-105" style={{ background: `linear-gradient(135deg, ${color}20, ${color}10)`, border: `1px solid ${color}30` }}>
+                      <span key={i} className="px-2 py-1 rounded text-[10px] font-medium text-white/85 backdrop-blur-sm transition-all duration-300 hover:scale-105 group-hover:bg-white/10" style={{ background: `linear-gradient(135deg, ${color}20, ${color}10)`, border: `1px solid ${color}30` }}>
                         {t}
                       </span>
                     ))}
@@ -378,8 +403,8 @@ export default function ProjectSection() {
                       href={`https://www.loom.com/share/${project.loom}`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-xl text-xs font-semibold text-white/90 glass backdrop-blur-sm transition-all duration-300 ease-out group-hover:scale-[1.02]"
-                      style={{ background: `linear-gradient(135deg, ${color}15, ${color}08)`, border: `1px solid ${color}25` }}
+                      className="flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-xl text-xs font-semibold text-white/90 glass backdrop-blur-sm transition-all duration-300 ease-out group-hover:scale-[1.02] group-hover:shadow-lg"
+                      style={{ background: `linear-gradient(135deg, ${color}15, ${color}08)`, border: `1px solid ${color}25`, boxShadow: `0 0 15px ${color}20` }}
                     >
                       <Play className="w-3.5 h-3.5 transition-transform group-hover:scale-110" aria-hidden="true" />
                       <span>Watch How It Works (Video)</span>
@@ -388,8 +413,8 @@ export default function ProjectSection() {
                       href={`https://github.com/kristian-enaga/${project.repo}`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-xl text-xs font-semibold text-white/90 glass backdrop-blur-sm transition-all duration-300 ease-out group-hover:scale-[1.02]"
-                      style={{ background: `linear-gradient(135deg, ${color}15, ${color}08)`, border: `1px solid ${color}25` }}
+                      className="flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-xl text-xs font-semibold text-white/90 glass backdrop-blur-sm transition-all duration-300 ease-out group-hover:scale-[1.02] group-hover:shadow-lg"
+                      style={{ background: `linear-gradient(135deg, ${color}15, ${color}08)`, border: `1px solid ${color}25`, boxShadow: `0 0 15px ${color}20` }}
                     >
                       <Github className="w-3.5 h-3.5 transition-transform group-hover:rotate-12" aria-hidden="true" />
                       <span>Code</span>

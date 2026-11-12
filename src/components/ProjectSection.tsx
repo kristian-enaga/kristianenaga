@@ -240,7 +240,7 @@ const projectsData: Project[] = [
 ];
 
 const categoryColors = {
-  "RevOps": { main: "#6366f1", second: "#a855f7" },
+  "RevOps": { main: "#dc2626", second: "#ef4444" },
   "GTM Intel": { main: "#22c55e", second: "#86efac" },
   "Automation": { main: "#f59e0b", second: "#fbbf24" },
 };
@@ -248,6 +248,8 @@ const categoryColors = {
 export default function ProjectSection() {
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [visibleCards, setVisibleCards] = useState<Set<number>>(new Set());
+  const observerRef = useRef<IntersectionObserver | null>(null);
 
   const colorObj = (category: string) => {
     return categoryColors[category as keyof typeof categoryColors] || categoryColors.RevOps;
@@ -262,6 +264,27 @@ export default function ProjectSection() {
     setIsSidebarOpen(false);
     setSelectedProject(null);
   };
+
+  // Intersection Observer for scroll-triggered card animations
+  useEffect(() => {
+    observerRef.current = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            const index = parseInt(entry.target.getAttribute('data-card-index') || '0');
+            setVisibleCards((prev) => new Set([...prev, index]));
+          }
+        });
+      },
+      { threshold: 0.1, rootMargin: "0px 0px -50px 0px" }
+    );
+
+    document.querySelectorAll('[data-card-index]').forEach((el) => {
+      observerRef.current?.observe(el);
+    });
+
+    return () => observerRef.current?.disconnect();
+  }, []);
 
   return (
     <section id="projects" className="relative py-24 px-6 lg:px-12 z-10" aria-labelledby="projects-heading">
@@ -282,11 +305,12 @@ export default function ProjectSection() {
           {projectsData.map((project, index) => {
             const color = colorObj(project.category).main;
             const second = colorObj(project.category).second;
-            const staggerDelay = index * 0.08;
+            const isVisible = visibleCards.has(index);
             return (
               <article
                 key={project.id}
                 role="listitem"
+                data-card-index={index}
                 onClick={(e) => {
                   e.stopPropagation();
                   openProject(project);
@@ -295,13 +319,13 @@ export default function ProjectSection() {
                   e.stopPropagation();
                   openProject(project);
                 }}
-                className="relative rounded-2xl p-5 lg:p-6 overflow-hidden transition-all duration-500 ease-out cursor-pointer group animate-card-entrance"
+                className={`relative rounded-2xl p-5 lg:p-6 overflow-hidden transition-all duration-500 ease-out cursor-pointer group ${
+                  isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-20"
+                }`}
                 style={{
-                  animationDelay: `${staggerDelay}s`,
-                  animationDuration: '0.5s',
-                  animationFillMode: 'both',
-                  animationName: "cardEntrance",
-                  animationTimingFunction: "ease-out",
+                  transitionDelay: `${index * 80}ms`,
+                  transitionDuration: '600ms',
+                  transitionTimingFunction: 'cubic-bezier(0.16, 1, 0.3, 1)',
                   border: `1px solid ${color}30`,
                   background: `linear-gradient(145deg, ${color}15, ${color}08, ${second}05)`,
                   boxShadow: `0 0 20px ${color}10, inset 0 1px 0 rgba(255,255,255,0.06)`,

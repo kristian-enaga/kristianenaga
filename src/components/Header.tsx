@@ -29,22 +29,22 @@ export default function Header() {
     >
       <div className="max-w-7xl mx-auto px-6 lg:px-12">
         <nav className="flex items-center justify-between h-16 lg:h-20" aria-label="Main navigation">
-          <Link
-            href="#"
-            className="flex items-center gap-3 text-foreground font-bold tracking-tight text-xl lg:text-2xl"
-            aria-label="Kristian Jay Eñaga - Home"
-            onClick={(e) => { e.preventDefault(); window.scrollTo({ top: 0, behavior: "smooth" }); setIsMobileMenuOpen(false); }}
-          >
-            <span className="relative flex items-center">
-              <Zap className="w-6 h-6 text-mint" aria-hidden="true" />
-              <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-mint rounded-full animate-pulse" aria-hidden="true" />
-            </span>
-            <span className="hidden sm:inline">KRISTIAN JAY EÑAGA</span>
-            <span className="hidden md:inline-flex items-center gap-1.5 text-muted text-xs font-medium uppercase tracking-wider ml-1">
-              <span className="w-2 h-2 bg-mint rounded-full animate-pulse" aria-hidden="true" />
-              GTM Automation Engineer
-            </span>
-          </Link>
+<Link
+              href="#"
+              className="flex items-center gap-3 text-foreground font-bold tracking-tight text-xl lg:text-2xl whitespace-nowrap"
+              aria-label="Kristian Jay Eñaga - Home"
+              onClick={(e) => { e.preventDefault(); window.scrollTo({ top: 0, behavior: "smooth" }); setIsMobileMenuOpen(false); }}
+            >
+              <span className="relative flex items-center flex-shrink-0">
+                <Zap className="w-6 h-6 text-mint" aria-hidden="true" />
+                <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-mint rounded-full animate-pulse" aria-hidden="true" />
+              </span>
+              <span className="hidden sm:inline">KRISTIAN JAY EÑAGA</span>
+              <span className="hidden md:inline-flex items-center gap-1.5 text-muted text-xs font-medium uppercase tracking-wider ml-1 flex-shrink-0">
+                <span className="w-2 h-2 bg-mint rounded-full animate-pulse" aria-hidden="true" />
+                GTM Automation Engineer
+              </span>
+            </Link>
 
           {/* Available for Work Badge - Desktop only */}
           <div className="hidden lg:flex items-center">

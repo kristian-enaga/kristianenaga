@@ -9,6 +9,8 @@ import SkillsTagCloud from "@/components/SkillsTagCloud";
 import Contact from "@/components/Contact";
 import Footer from "@/components/Footer";
 import MouseTrail from "@/components/MouseTrail";
+import SparkTrail from "@/components/SparkTrail";
+import CursorGlow from "@/components/CursorGlow";
 import EmailCaptureModal from "@/components/EmailCaptureModal";
 import BottomSheet from "@/components/BottomSheet";
 
@@ -27,6 +29,8 @@ export default function Home() {
         <Contact />
       </main>
       <MouseTrail />
+      <SparkTrail />
+      <CursorGlow />
       <EmailCaptureModal />
       <BottomSheet />
       <Footer />

@@ -341,7 +341,7 @@ export default function ProjectSection() {
                   e.stopPropagation();
                   openProject(project);
                 }}
-                className={`relative rounded-2xl p-5 lg:p-6 overflow-hidden transition-all duration-300 ease-out cursor-pointer group ${
+                className={`relative rounded-2xl p-5 lg:p-6 overflow-hidden transition-all duration-300 ease-out cursor-pointer group hover:scale-101 ${
                   isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-20"
                 }`}
                 style={{

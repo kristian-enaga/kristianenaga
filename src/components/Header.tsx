@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { Menu, X, Zap, ChevronRight, MessageSquare, ArrowRight } from "lucide-react";
+import { Menu, X, Zap, ChevronRight, MessageSquare, ArrowRight, Briefcase, Sparkles } from "lucide-react";
 
 const navLinks = [
   { href: "#projects", label: "Projects" },
@@ -46,6 +46,14 @@ export default function Header() {
             </span>
           </Link>
 
+          {/* Available for Work Badge - Desktop only */}
+          <div className="hidden lg:flex items-center">
+            <div className="flex items-center gap-2 px-4 py-2 rounded-full glass border-amber-500/30 bg-amber-500/10 text-amber-400 text-sm font-medium animate-fade-in">
+              <span className="w-2 h-2 bg-amber-400 rounded-full animate-pulse" aria-hidden="true" />
+              Available for Work
+            </div>
+          </div>
+
           <div className="hidden lg:flex items-center gap-8">
             {navLinks.map((link) => (
               <a
@@ -79,6 +87,9 @@ export default function Header() {
               Let's Work Together
               <ChevronRight className="w-4 h-4 ml-2 transition-transform duration-500 ease-out group-hover:-translate-y-1 group-hover:rotate-12" aria-hidden="true" />
             </a>
+            
+            {/* Email Capture Trigger - Desktop */}
+            <EmailCaptureTrigger />
           </div>
 
           <button
@@ -128,10 +139,37 @@ export default function Header() {
               >
                 Let's Work Together
               </a>
+              
+              {/* Available for Work Badge - Mobile */}
+              <div className="flex items-center justify-center gap-2 px-4 py-2 rounded-full glass border-amber-500/30 bg-amber-500/10 text-amber-400 text-sm font-medium animate-fade-in">
+                <span className="w-2 h-2 bg-amber-400 rounded-full animate-pulse" aria-hidden="true" />
+                Available for Contract / Full-time · Remote · APAC/EMEA/US West
+              </div>
+              
+              {/* Email Capture Trigger - Mobile */}
+              <EmailCaptureTrigger />
             </div>
           </div>
         </div>
       </div>
     </header>
+  );
+}
+
+// Email Capture Trigger Component
+function EmailCaptureTrigger() {
+  return (
+    <button
+      className="inline-flex items-center gap-2 px-4 py-2 rounded-full glass border-mint/30 bg-mint/10 text-mint font-medium text-sm hover:bg-mint/20 transition-all duration-300 focus-ring hidden sm:flex"
+      onClick={() => {
+        const event = new CustomEvent('open-email-capture');
+        window.dispatchEvent(event);
+      }}
+    >
+      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 002 2v10a2 2 0 002 2z" />
+      </svg>
+      <span className="hidden lg:inline">Get Insights</span>
+    </button>
   );
 }

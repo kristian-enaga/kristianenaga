@@ -5,6 +5,9 @@ import Approach from "@/components/Approach";
 import Contact from "@/components/Contact";
 import Footer from "@/components/Footer";
 import MouseTrail from "@/components/MouseTrail";
+import EmailCaptureModal from "@/components/EmailCaptureModal";
+import TechStack from "@/components/TechStack";
+import BottomSheet from "@/components/BottomSheet";
 
 export default function Home() {
   return (
@@ -14,9 +17,12 @@ export default function Home() {
         <HeroCanvasWrapper />
         <ProjectSection />
         <Approach />
+        <TechStack />
         <Contact />
       </main>
       <MouseTrail />
+      <EmailCaptureModal />
+      <BottomSheet />
       <Footer />
     </>
   );

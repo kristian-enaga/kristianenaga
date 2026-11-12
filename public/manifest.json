@@ -1,0 +1,38 @@
+{
+  "name": "Kristian Jay Eñaga | GTM Automation Engineer",
+  "short_name": "Kristian Eñaga",
+  "description": "GTM Automation Engineer building 10 production-grade automation systems. Zero silent failures.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#020617",
+  "theme_color": "#020617",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["business", "productivity", "developer"],
+  "screenshots": [],
+  "shortcuts": [
+    {
+      "name": "Projects",
+      "url": "/#projects",
+      "description": "View 10 production automation systems"
+    },
+    {
+      "name": "Contact",
+      "url": "/#contact",
+      "description": "Get in touch for automation work"
+    }
+  ]
+}

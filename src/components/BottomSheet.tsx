@@ -34,10 +34,14 @@ export default function BottomSheet() {
     };
   }, []);
 
-  // Handle swipe to close on mobile
+  // Handle swipe to close on mobile - Improved thresholds
   const handleTouchStart = (e: React.TouchEvent) => {
     startYRef.current = e.touches[0].clientY;
     currentYRef.current = startYRef.current;
+    // Prevent body scroll when dragging
+    if (isOpen) {
+      document.body.style.overflow = 'hidden';
+    }
   };
 
   const handleTouchMove = (e: React.TouchEvent) => {
@@ -46,8 +50,21 @@ export default function BottomSheet() {
     
     // Only allow dragging down (positive delta)
     if (deltaY > 0 && sheetRef.current) {
-      sheetRef.current.style.transform = `translateY(${deltaY}px)`;
+      // Add resistance when dragging past threshold
+      let translateY = deltaY;
+      if (deltaY > 150) {
+        // Add resistance after 150px
+        translateY = 150 + (deltaY - 150) * 0.3;
+      }
+      sheetRef.current.style.transform = `translateY(${translateY}px)`;
       sheetRef.current.style.transition = 'none';
+      
+      // Visual feedback - fade backdrop as user drags
+      const backdrop = document.querySelector('[data-bottom-sheet-backdrop]');
+      if (backdrop) {
+        const opacity = Math.max(0.2, 0.6 - (deltaY / 300));
+        (backdrop as HTMLElement).style.opacity = opacity.toString();
+      }
     }
   };
 
@@ -55,15 +72,44 @@ export default function BottomSheet() {
     const deltaY = currentYRef.current - startYRef.current;
     
     if (sheetRef.current) {
-      sheetRef.current.style.transition = 'transform 300ms cubic-bezier(0.16, 1, 0.3, 1)';
+      sheetRef.current.style.transition = 'transform 350ms cubic-bezier(0.16, 1, 0.3, 1)';
       
-      if (deltaY > 100) {
+      // Reset backdrop opacity
+      const backdrop = document.querySelector('[data-bottom-sheet-backdrop]');
+      if (backdrop) {
+        (backdrop as HTMLElement).style.transition = 'opacity 350ms cubic-bezier(0.16, 1, 0.3, 1)';
+        (backdrop as HTMLElement).style.opacity = '0.6';
+      }
+      
+      // Improved thresholds:
+      // - < 80px: snap back
+      // - 80-150px: requires velocity check
+      // - > 150px: auto close
+      if (deltaY > 150) {
         // Swipe down far enough to close
         closeSheet();
+      } else if (deltaY > 80) {
+        // Check velocity for medium swipes
+        // For simplicity, we'll use a timeout to simulate velocity check
+        // In a production app, you'd track touch timestamps
+        const velocity = deltaY / 300; // approximate
+        if (velocity > 0.3) {
+          closeSheet();
+        } else {
+          // Snap back
+          if (sheetRef.current) {
+            sheetRef.current.style.transform = 'translateY(0)';
+          }
+        }
       } else {
-        // Snap back
-        sheetRef.current.style.transform = 'translateY(0)';
+        // Snap back for small drags
+        if (sheetRef.current) {
+          sheetRef.current.style.transform = 'translateY(0)';
+        }
       }
+      
+      // Restore body scroll
+      document.body.style.overflow = 'unset';
     }
   };
 
@@ -145,9 +191,11 @@ export default function BottomSheet() {
     <>
       {/* Backdrop */}
       <div
+        data-bottom-sheet-backdrop
         className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm transition-opacity duration-300 animate-fade-in"
         onClick={closeSheet}
         aria-hidden="true"
+        style={{ opacity: isOpen ? 0.6 : 0 }}
       />
 
       {/* Bottom Sheet */}

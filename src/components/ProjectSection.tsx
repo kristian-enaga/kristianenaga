@@ -237,6 +237,28 @@ const projectsData: Project[] = [
     ],
     businessRelevance: "Fix time drops from hours to minutes. Every failure is visible, traceable, and actionable."
   },
+  {
+    id: "11",
+    number: "11",
+    category: "RevOps",
+    categoryLabel: "Revenue Operations",
+    title: "Lead Enrichment Engine",
+    repo: "gtm-lead-enrichment-engine",
+    tech: ["n8n", "Supabase", "Zod", "Clearbit", "Apollo", "Hunter"],
+    loom: "placeholder",
+    businessProblem: "Leads come in with minimal data (name + email only). Sales reps can't effectively outreach without company info, tech stack, employee count, or pain points. Manual research takes 15+ minutes per lead.",
+    whatItDoes: "Automatically enriches every incoming lead with 30+ data points including company name, industry, employee count, tech stack, funding status, social profiles, and intent signals. Uses cascading API fallback (Clearbit → Apollo → Hunter) with rate limiting and caching. Persists enriched data to Supabase with deduplication logic.",
+    architecture: ["Webhook Intake", "API Fallback Chain", "Data Normalization", "Deduplication Engine", "Supabase Persistence", "Priority Scoring"],
+    technicalImpl: [
+      "n8n workflow with webhook trigger",
+      "Cascading API calls with error handling and retry logic",
+      "Zod schema validation for each data point",
+      "Supabase upsert with conflict detection",
+      "Priority scoring based on ICP fit parameters",
+      "Google Sheets audit log for compliance"
+    ],
+    businessRelevance: "Enriched, tiered prospects ready for outreach with priority scoring and routing. Rep research time drops from 15-min/lead to <30-sec/lead."
+  },
 ];
 
 const categoryColors = {
@@ -319,26 +341,26 @@ export default function ProjectSection() {
                   e.stopPropagation();
                   openProject(project);
                 }}
-                className={`relative rounded-2xl p-5 lg:p-6 overflow-hidden transition-all duration-500 ease-out cursor-pointer group ${
+                className={`relative rounded-2xl p-5 lg:p-6 overflow-hidden transition-all duration-300 ease-out cursor-pointer group ${
                   isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-20"
                 }`}
                 style={{
                   transitionDelay: `${index * 80}ms`,
-                  transitionDuration: '600ms',
+                  transitionDuration: '400ms',
                   transitionTimingFunction: 'cubic-bezier(0.16, 1, 0.3, 1)',
-                  border: `1px solid ${color}30`,
-                  background: `linear-gradient(145deg, ${color}15, ${color}08, ${second}05)`,
-                  boxShadow: `0 0 30px ${color}15, 0 0 60px ${color}08, inset 0 1px 0 rgba(255,255,255,0.06)`,
+                  border: `1px solid ${color}40`,
+                  background: `linear-gradient(145deg, ${color}10, ${color}05, ${second}03)`,
+                  boxShadow: `0 0 40px ${color}20, 0 0 80px ${color}10, inset 0 1px 0 rgba(255,255,255,0.08)`,
                 }}
               >
-                {/* Persistent ambient glow */}
+                {/* Persistent ambient glow - BRIGHTER */}
                 <div
-                  className="absolute inset-0 rounded-2xl pointer-events-none opacity-30"
-                  style={{ background: `radial-gradient(ellipse at center, ${color}25 0%, ${color}00 70%)` }}
+                  className="absolute inset-0 rounded-2xl pointer-events-none opacity-60"
+                  style={{ background: `radial-gradient(ellipse at center, ${color}35 0%, ${color}15 40%, ${color}00 70%)` }}
                   aria-hidden="true"
                 />
 
-                {/* Animated shimmer sweep on hover */}
+                {/* Animated shimmer sweep on hover - BRIGHTER */}
                 <div
                   className="absolute inset-0 rounded-2xl pointer-events-none overflow-hidden"
                   aria-hidden="true"
@@ -346,53 +368,60 @@ export default function ProjectSection() {
                   <div
                     className="absolute -top-1/2 -left-1/2 w-full h-full animate-shimmer"
                     style={{
-                      background: `linear-gradient(135deg, transparent 40%, ${color}30 50%, transparent 60%)`,
+                      background: `linear-gradient(135deg, transparent 30%, ${color}50 50%, transparent 70%)`,
                       transform: 'translateX(-100%)',
                       transformOrigin: 'center',
                     }}
                   />
                 </div>
 
-                {/* Pulsing border glow on hover */}
+                {/* STRONG border glow on hover - MUCH BRIGHTER */}
                 <div
-                  className="absolute -inset-px rounded-2xl pointer-events-none transition-all duration-500 opacity-0 group-hover:opacity-100"
+                  className="absolute -inset-px rounded-2xl pointer-events-none transition-all duration-200 opacity-0 group-hover:opacity-100"
                   style={{ 
-                    boxShadow: `0 0 20px ${color}60, 0 0 40px ${color}40, 0 0 80px ${color}20`,
-                    animation: 'borderPulse 2s ease-in-out infinite'
+                    boxShadow: `0 0 30px ${color}80, 0 0 60px ${color}60, 0 0 120px ${color}40`,
+                    animation: 'borderPulse 1.5s ease-in-out infinite'
                   }}
                   aria-hidden="true"
                 />
 
-                {/* Inner content glow on hover */}
+                {/* Inner FULL CARD glow on hover - VERY BRIGHT */}
                 <div
-                  className="absolute inset-0 rounded-2xl pointer-events-none transition-opacity duration-500 opacity-0 group-hover:opacity-100"
-                  style={{ background: `radial-gradient(ellipse at center, ${color}15 0%, ${color}00 60%)` }}
+                  className="absolute inset-0 rounded-2xl pointer-events-none transition-opacity duration-200 opacity-0 group-hover:opacity-100"
+                  style={{ background: `radial-gradient(ellipse at center, ${color}40 0%, ${color}20 40%, ${color}00 70%)` }}
+                  aria-hidden="true"
+                />
+
+                {/* Additional intense core glow on hover */}
+                <div
+                  className="absolute inset-0 rounded-2xl pointer-events-none transition-opacity duration-200 opacity-0 group-hover:opacity-100"
+                  style={{ background: `radial-gradient(ellipse at center, ${color}60 0%, ${color}00 50%)` }}
                   aria-hidden="true"
                 />
 
                 <div className="relative z-10">
                   <div className="flex items-start justify-between mb-3">
                     <span className="text-xs font-bold text-white/40 tracking-wider uppercase">System {project.number}</span>
-                    <span className="px-2 py-0.5 rounded text-[10px] font-medium text-white/90 backdrop-blur-sm" style={{ background: `linear-gradient(135deg, ${color}30, ${color}15)`, border: `1px solid ${color}40` }}>
+                    <span className="px-2 py-0.5 rounded text-[10px] font-medium text-white/90 backdrop-blur-sm group-hover:scale-105 transition-transform duration-300" style={{ background: `linear-gradient(135deg, ${color}40, ${color}20)`, border: `1px solid ${color}60` }}>
                       {project.category}
                     </span>
                   </div>
 
-                  {/* Business Benefit Badge */}
-                  <div className="mb-3 p-3 rounded-xl backdrop-blur-sm transition-all duration-300 group-hover:scale-[1.02] group-hover:shadow-lg" style={{ background: `linear-gradient(135deg, ${color}18, ${color}08)`, border: `1px solid ${color}30`, boxShadow: `0 0 20px ${color}20` }}>
+                  {/* Business Benefit Badge - GLOWS on hover */}
+                  <div className="mb-3 p-3 rounded-xl backdrop-blur-sm transition-all duration-200 group-hover:scale-[1.03] group-hover:shadow-[0_0_30px_${color}60]" style={{ background: `linear-gradient(135deg, ${color}25, ${color}12)`, border: `1px solid ${color}40`, boxShadow: `0 0 25px ${color}30` }}>
                     <div className="flex items-center gap-2">
-                      <Zap className="w-3.5 h-3.5 transition-transform group-hover:scale-110" style={{ color }} aria-hidden="true" />
-                      <span className="text-xs font-semibold" style={{ color: `${color}dd` }}>
+                      <Zap className="w-3.5 h-3.5 transition-transform group-hover:scale-125" style={{ color }} aria-hidden="true" />
+                      <span className="text-xs font-semibold" style={{ color: `${color}ff` }}>
                         {project.businessRelevance}
                       </span>
                     </div>
                   </div>
 
-                  <h3 className="text-lg font-bold text-white mb-2 leading-tight group-hover:text-mint transition-colors duration-300">{project.title}</h3>
+                  <h3 className="text-lg font-bold text-white mb-2 leading-tight group-hover:text-mint transition-colors duration-200">{project.title}</h3>
 
                   <div className="mb-3 flex flex-wrap gap-1.5" role="list" aria-label="Technologies">
                     {project.tech.slice(0, 4).map((t, i) => (
-                      <span key={i} className="px-2 py-1 rounded text-[10px] font-medium text-white/85 backdrop-blur-sm transition-all duration-300 hover:scale-105 group-hover:bg-white/10" style={{ background: `linear-gradient(135deg, ${color}20, ${color}10)`, border: `1px solid ${color}30` }}>
+                      <span key={i} className="px-2 py-1 rounded text-[10px] font-medium text-white/85 backdrop-blur-sm transition-all duration-200 hover:scale-110 group-hover:bg-white/20 group-hover:text-white group-hover:shadow-[0_0_15px_${color}60]" style={{ background: `linear-gradient(135deg, ${color}30, ${color}15)`, border: `1px solid ${color}50` }}>
                         {t}
                       </span>
                     ))}
@@ -403,20 +432,20 @@ export default function ProjectSection() {
                       href={`https://www.loom.com/share/${project.loom}`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-xl text-xs font-semibold text-white/90 glass backdrop-blur-sm transition-all duration-300 ease-out group-hover:scale-[1.02] group-hover:shadow-lg"
-                      style={{ background: `linear-gradient(135deg, ${color}15, ${color}08)`, border: `1px solid ${color}25`, boxShadow: `0 0 15px ${color}20` }}
+                      className="flex-1 flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl text-xs font-semibold text-white/90 glass backdrop-blur-sm transition-all duration-200 ease-out group-hover:scale-[1.03] group-hover:shadow-[0_0_25px_${color}80]"
+                      style={{ background: `linear-gradient(135deg, ${color}25, ${color}12)`, border: `1px solid ${color}40`, boxShadow: `0 0 20px ${color}30` }}
                     >
-                      <Play className="w-3.5 h-3.5 transition-transform group-hover:scale-110" aria-hidden="true" />
+                      <Play className="w-3.5 h-3.5 transition-transform group-hover:scale-115" aria-hidden="true" />
                       <span>Watch How It Works (Video)</span>
                     </a>
                     <a
                       href={`https://github.com/kristian-enaga/${project.repo}`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-xl text-xs font-semibold text-white/90 glass backdrop-blur-sm transition-all duration-300 ease-out group-hover:scale-[1.02] group-hover:shadow-lg"
-                      style={{ background: `linear-gradient(135deg, ${color}15, ${color}08)`, border: `1px solid ${color}25`, boxShadow: `0 0 15px ${color}20` }}
+                      className="flex-1 flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl text-xs font-semibold text-white/90 glass backdrop-blur-sm transition-all duration-200 ease-out group-hover:scale-[1.03] group-hover:shadow-[0_0_25px_${color}80]"
+                      style={{ background: `linear-gradient(135deg, ${color}25, ${color}12)`, border: `1px solid ${color}40`, boxShadow: `0 0 20px ${color}30` }}
                     >
-                      <Github className="w-3.5 h-3.5 transition-transform group-hover:rotate-12" aria-hidden="true" />
+                      <Github className="w-3.5 h-3.5 transition-transform group-hover:rotate-15" aria-hidden="true" />
                       <span>Code</span>
                     </a>
                   </div>

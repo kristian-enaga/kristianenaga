@@ -47,11 +47,17 @@ export default function Header() {
             </Link>
 
           {/* Available for Work Badge - Desktop only */}
-          <div className="hidden lg:flex items-center">
-            <div className="flex items-center gap-2 px-4 py-2 rounded-full glass border-amber-500/30 bg-amber-500/10 text-amber-400 text-sm font-medium animate-fade-in">
+          <div className="hidden lg:flex items-center gap-3">
+            <a
+              href="https://calendly.com/kchanchan2357/30min"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-2 px-4 py-2 rounded-full glass border-amber-500/30 bg-amber-500/10 text-amber-400 text-sm font-medium animate-fade-in hover:bg-amber-500/20 transition-all duration-300"
+              aria-label="Book a 15-min discovery call"
+            >
               <span className="w-2 h-2 bg-amber-400 rounded-full animate-pulse" aria-hidden="true" />
-              Available for Work
-            </div>
+              <span className="hidden sm:inline">Book a Call</span>
+            </a>
           </div>
 
           <div className="hidden lg:flex items-center gap-8">
@@ -141,10 +147,16 @@ export default function Header() {
               </a>
               
               {/* Available for Work Badge - Mobile */}
-              <div className="flex items-center justify-center gap-2 px-4 py-2 rounded-full glass border-amber-500/30 bg-amber-500/10 text-amber-400 text-sm font-medium animate-fade-in">
+              <a
+                href="https://calendly.com/kchanchan2357/30min"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center justify-center gap-2 px-4 py-2 rounded-full glass border-amber-500/30 bg-amber-500/10 text-amber-400 text-sm font-medium animate-fade-in hover:bg-amber-500/20 transition-all duration-300 text-center"
+                onClick={() => setIsMobileMenuOpen(false)}
+              >
                 <span className="w-2 h-2 bg-amber-400 rounded-full animate-pulse" aria-hidden="true" />
-                Available for Contract / Full-time · Remote · APAC/EMEA/US West
-              </div>
+                Book a 15-min Call · UTC+8 · Async-First
+              </a>
               
               {/* Email Capture Trigger - Mobile */}
               <EmailCaptureTrigger />

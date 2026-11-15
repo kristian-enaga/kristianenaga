@@ -151,10 +151,10 @@ export default function HeroCanvas() {
 
   const metrics = useMemo<Metric[]>(
     () => [
-      { label: "Inbound Signals", value: "12.4k", unit: "/mo", color: "#fbbf24" },
-      { label: "Enriched Leads", value: "9.8k", unit: "/mo", color: "#ff6b5e" },
-      { label: "Outbound Sent", value: "3.2k", unit: "/mo", color: "#dc2626" },
-      { label: "Revenue Recovered", value: "$2.1M", unit: "ARR", color: "#10b981" },
+      { label: "Inbound Signals", value: "1.2k", unit: "/mo", color: "#fbbf24" },
+      { label: "Enriched Leads", value: "850+", unit: "/mo", color: "#ff6b5e" },
+      { label: "Outbound Sent", value: "420+", unit: "/mo", color: "#dc2626" },
+      { label: "Hours Saved", value: "1,200+", unit: "/yr", color: "#10b981" },
     ],
     []
   );
@@ -438,8 +438,17 @@ export default function HeroCanvas() {
           </div>
         </div>
 
-        <div className="flex flex-col sm:flex-row items-center justify-center gap-3" style={{ animation: "heroFadeUp 0.8s ease-out 0.5s both" }}>
-          <a href="#projects" className="btn-primary focus-ring group" onClick={(e) => { e.preventDefault(); document.querySelector('#projects')?.scrollIntoView({ behavior: 'smooth' }); }}>
+        <div className="flex flex-col sm:flex-row items-center justify-center gap-3 mb-6" style={{ animation: "heroFadeUp 0.8s ease-out 0.5s both" }}>
+          <a href="https://calendly.com/kchanchan2357/30min" target="_blank" rel="noopener noreferrer" className="btn-primary focus-ring group">
+            <span className="relative z-10">Book a 15-min Discovery Call</span>
+            <svg className="w-5 h-5 ml-2 transition-transform duration-500 ease-out group-hover:-translate-y-1 group-hover:rotate-12" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+              <line x1="16" y1="2" x2="16" y2="6"/>
+              <line x1="8" y1="2" x2="8" y2="6"/>
+              <line x1="3" y1="10" x2="21" y2="10"/>
+            </svg>
+          </a>
+          <a href="#projects" className="btn-secondary focus-ring group" onClick={(e) => { e.preventDefault(); document.querySelector('#projects')?.scrollIntoView({ behavior: 'smooth' }); }}>
             <span className="relative z-10">Explore Projects</span>
             <svg className="w-5 h-5 ml-2 transition-transform duration-500 ease-out group-hover:-translate-y-1 group-hover:rotate-12" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <path d="M5 12h14M12 5l7 7-7 7" />
@@ -452,6 +461,10 @@ export default function HeroCanvas() {
             3-min Walkthrough
           </a>
         </div>
+        
+        <p className="text-center text-xs text-muted/70 max-w-md mx-auto" style={{ animation: "heroFadeUp 0.8s ease-out 0.6s both" }}>
+          <span className="font-medium text-white/60">Timezone:</span> UTC+8 (Philippines) — 4hr overlap with US West, full day with APAC/EMEA. Async-first with scheduled syncs.
+        </p>
       </div>
     </section>
   );

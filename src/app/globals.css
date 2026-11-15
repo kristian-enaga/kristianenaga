@@ -317,6 +317,156 @@ body::before {
   }
 }
 
+/* ===== Modern Tech Startup Animation System ===== */
+@keyframes entrance-fade-up {
+  from { opacity: 0; transform: translateY(24px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes entrance-fade-down {
+  from { opacity: 0; transform: translateY(-24px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes entrance-scale-in {
+  from { opacity: 0; transform: scale(0.96); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+@keyframes entrance-slide-right {
+  from { opacity: 0; transform: translateX(-32px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes entrance-slide-left {
+  from { opacity: 0; transform: translateX(32px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes shimmer-sweep {
+  0% { transform: translateX(-100%) skewX(-12deg); }
+  100% { transform: translateX(200%) skewX(-12deg); }
+}
+
+@keyframes glow-pulse {
+  0%, 100% { opacity: 0.4; filter: blur(8px); }
+  50% { opacity: 0.7; filter: blur(12px); }
+}
+
+@keyframes float-gentle {
+  0%, 100% { transform: translateY(0) translateX(0); }
+  25% { transform: translateY(-4px) translateX(2px); }
+  75% { transform: translateY(4px) translateX(-2px); }
+}
+
+@keyframes border-shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* Animation utility classes */
+.animate-entrance-fade-up {
+  animation: entrance-fade-up 0.7s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  opacity: 0;
+}
+
+.animate-entrance-fade-down {
+  animation: entrance-fade-down 0.7s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  opacity: 0;
+}
+
+.animate-entrance-scale-in {
+  animation: entrance-scale-in 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  opacity: 0;
+}
+
+.animate-entrance-slide-right {
+  animation: entrance-slide-right 0.7s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  opacity: 0;
+}
+
+.animate-entrance-slide-left {
+  animation: entrance-slide-left 0.7s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  opacity: 0;
+}
+
+/* Stagger delays */
+.delay-1 { animation-delay: 60ms; }
+.delay-2 { animation-delay: 120ms; }
+.delay-3 { animation-delay: 180ms; }
+.delay-4 { animation-delay: 240ms; }
+.delay-5 { animation-delay: 300ms; }
+.delay-6 { animation-delay: 360ms; }
+.delay-7 { animation-delay: 420ms; }
+.delay-8 { animation-delay: 480ms; }
+.delay-9 { animation-delay: 540ms; }
+.delay-10 { animation-delay: 600ms; }
+
+/* Hover lift for cards */
+.hover-lift {
+  transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), 
+              box-shadow 0.4s cubic-bezier(0.16, 1, 0.3, 1),
+              border-color 0.3s ease;
+}
+.hover-lift:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 24px 48px -12px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(0, 255, 135, 0.15);
+  border-color: rgba(0, 255, 135, 0.3);
+}
+
+/* Button magnetic hover */
+.btn-magnetic {
+  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), 
+              box-shadow 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.btn-magnetic:hover {
+  transform: translateY(-3px) scale(1.02);
+}
+
+/* Text reveal animation */
+.text-reveal {
+  overflow: hidden;
+}
+.text-reveal > span {
+  display: inline-block;
+  animation: entrance-fade-up 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  opacity: 0;
+}
+
+/* Scroll-triggered base (JS adds .in-view) */
+.scroll-reveal {
+  opacity: 0;
+  transform: translateY(32px);
+  transition: opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1), 
+              transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.scroll-reveal.in-view {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Reduced motion respect */
+@media (prefers-reduced-motion: reduce) {
+  .animate-entrance-fade-up,
+  .animate-entrance-fade-down,
+  .animate-entrance-scale-in,
+  .animate-entrance-slide-right,
+  .animate-entrance-slide-left,
+  .scroll-reveal,
+  .text-reveal > span {
+    animation: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+    transition: none !important;
+  }
+  .hover-lift:hover,
+  .btn-magnetic:hover {
+    transform: none !important;
+  }
+}
+
+/* ===== End Animation System ===== */
+
 /* Dark mode specific adjustments */
 @media (prefers-color-scheme: dark) {
   :root:not(.light) {

@@ -402,7 +402,7 @@ body::before {
 .delay-9 { animation-delay: 540ms; }
 .delay-10 { animation-delay: 600ms; }
 
-/* Hover lift for cards - Dramatic Glowing */
+/* Hover lift for cards - Dramatic Glowing (Colored Only) */
 .hover-lift {
   transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1), 
               box-shadow 0.5s cubic-bezier(0.16, 1, 0.3, 1),
@@ -416,13 +416,12 @@ body::before {
     0 0 0 2px rgba(0, 255, 135, 0.6),
     0 0 48px rgba(0, 255, 135, 0.4),
     0 0 96px rgba(6, 182, 212, 0.3),
-    0 0 144px rgba(168, 85, 247, 0.15),
-    inset 0 1px 0 rgba(255, 255, 255, 0.15);
+    0 0 144px rgba(168, 85, 247, 0.15);
   border-color: rgba(0, 255, 135, 0.8);
   background: rgba(11, 15, 25, 1);
 }
 
-/* Enhanced hover for metric cards - Maximum Glow */
+/* Enhanced hover for metric cards - Colored Glow Only */
 .hover-lift.metric-card:hover {
   transform: translateY(-14px) scale(1.035);
   box-shadow: 
@@ -430,13 +429,12 @@ body::before {
     0 0 0 2px rgba(0, 255, 135, 0.7),
     0 0 64px rgba(0, 255, 135, 0.5),
     0 0 128px rgba(6, 182, 212, 0.35),
-    0 0 192px rgba(168, 85, 247, 0.2),
-    inset 0 1px 0 rgba(255, 255, 255, 0.2);
+    0 0 192px rgba(168, 85, 247, 0.2);
   border-color: rgba(0, 255, 135, 1);
   background: rgba(11, 15, 25, 1);
 }
 
-/* Enhanced hover for stage cards - Color-matched Intense Glow */
+/* Enhanced hover for stage cards - Color-matched Glow Only */
 .hover-lift.stage-card:hover {
   transform: translateY(-12px) scale(1.025);
   box-shadow: 
@@ -444,12 +442,11 @@ body::before {
     0 0 0 2px rgba(255, 107, 94, 0.7),
     0 0 64px rgba(255, 107, 94, 0.45),
     0 0 128px rgba(220, 38, 38, 0.3),
-    0 0 192px rgba(251, 191, 36, 0.15),
-    inset 0 1px 0 rgba(255, 255, 255, 0.15);
+    0 0 192px rgba(251, 191, 36, 0.15);
   border-color: rgba(255, 107, 94, 0.9);
 }
 
-/* Button magnetic hover - Maximum Impact */
+/* Button magnetic hover - Colored Glow Only */
 .btn-magnetic {
   transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), 
               box-shadow 0.4s cubic-bezier(0.16, 1, 0.3, 1);
@@ -463,7 +460,7 @@ body::before {
     0 0 96px rgba(6, 182, 212, 0.35);
 }
 
-/* Text/icon glow on hover - Intense */
+/* Text glow on hover - Colored Only */
 .hover-lift:hover .font-mono.text-white,
 .hover-lift:hover .font-bold.text-white {
   text-shadow: 0 0 24px rgba(0, 255, 135, 1), 0 0 48px rgba(6, 182, 212, 0.7), 0 0 72px rgba(168, 85, 247, 0.4);

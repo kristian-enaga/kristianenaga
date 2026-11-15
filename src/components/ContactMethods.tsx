@@ -74,11 +74,12 @@ const contactMethods: ContactMethod[] = [
     id: "resume",
     label: "Download CV",
     value: "PDF Resume",
-    href: "/resume.pdf",
+    href: "https://drive.google.com/file/d/1vRSBVCEiv8h3c_NvlHtqMdGSVBx7HzUu/view?usp=sharing",
     icon: <Download className="w-5 h-5" aria-hidden="true" />,
     color: "#f59e0b",
     description: "Download PDF resume",
     analyticsEvent: "contact_resume_download",
+    external: true,
   },
 ];
 

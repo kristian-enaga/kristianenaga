@@ -46,20 +46,6 @@ export default function Header() {
               </span>
             </Link>
 
-          {/* Book a Call CTA - Desktop only */}
-          <div className="hidden lg:flex items-center">
-            <a
-              href="https://calendly.com/kchanchan2357/30min"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="btn-primary focus-ring whitespace-nowrap group"
-              aria-label="Book a 15-min discovery call"
-            >
-              <Calendar className="w-4 h-4 mr-2 transition-transform duration-500 ease-out group-hover:-translate-y-1 group-hover:rotate-12" aria-hidden="true" />
-              Book a 15-min Call
-            </a>
-          </div>
-
           <div className="hidden lg:flex items-center gap-8">
             {navLinks.map((link) => (
               <a
@@ -86,6 +72,16 @@ export default function Header() {
               <span className="hidden sm:inline">WhatsApp</span>
             </a>
             <a
+              href="https://calendly.com/kchanchan2357/30min"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="px-4 py-2 rounded-full font-medium text-sm bg-transparent text-foreground border border-white/10 hover:border-mint/50 hover:bg-white/5 transition-all duration-500 ease-in-out-cubic focus-ring whitespace-nowrap group"
+              aria-label="Book a 15-min discovery call"
+            >
+              <Calendar className="w-4 h-4 mr-1.5 transition-transform duration-500 ease-out group-hover:-translate-y-1 group-hover:rotate-12" aria-hidden="true" />
+              Book a Call
+            </a>
+            <a
               href="#contact"
               className="btn-primary focus-ring whitespace-nowrap group"
               onClick={(e) => { e.preventDefault(); document.querySelector('#contact')?.scrollIntoView({ behavior: 'smooth' }); }}
@@ -93,9 +89,6 @@ export default function Header() {
               Let's Work Together
               <ChevronRight className="w-4 h-4 ml-2 transition-transform duration-500 ease-out group-hover:-translate-y-1 group-hover:rotate-12" aria-hidden="true" />
             </a>
-            
-            {/* Email Capture Trigger - Desktop */}
-            <EmailCaptureTrigger />
           </div>
 
           <button
@@ -157,31 +150,10 @@ export default function Header() {
                 <span className="w-2 h-2 bg-amber-400 rounded-full animate-pulse" aria-hidden="true" />
                 Book a 15-min Call · UTC+8 · Async-First
               </a>
-              
-              {/* Email Capture Trigger - Mobile */}
-              <EmailCaptureTrigger />
             </div>
           </div>
         </div>
       </div>
     </header>
-  );
-}
-
-// Email Capture Trigger Component
-function EmailCaptureTrigger() {
-  return (
-    <button
-      className="inline-flex items-center gap-2 px-4 py-2 rounded-full glass border-mint/30 bg-mint/10 text-mint font-medium text-sm hover:bg-mint/20 transition-all duration-300 focus-ring hidden sm:flex"
-      onClick={() => {
-        const event = new CustomEvent('open-email-capture');
-        window.dispatchEvent(event);
-      }}
-    >
-      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 002 2v10a2 2 0 002 2z" />
-      </svg>
-      <span className="hidden lg:inline">Get Insights</span>
-    </button>
   );
 }

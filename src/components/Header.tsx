@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { Menu, X, Zap, ChevronRight, MessageSquare, ArrowRight, Briefcase, Sparkles } from "lucide-react";
+import { Menu, X, Zap, ChevronRight, MessageSquare, ArrowRight, Briefcase, Sparkles, Calendar } from "lucide-react";
 
 const navLinks = [
   { href: "#projects", label: "Projects" },
@@ -46,17 +46,17 @@ export default function Header() {
               </span>
             </Link>
 
-          {/* Available for Work Badge - Desktop only */}
-          <div className="hidden lg:flex items-center gap-3">
+          {/* Book a Call CTA - Desktop only */}
+          <div className="hidden lg:flex items-center">
             <a
               href="https://calendly.com/kchanchan2357/30min"
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-center gap-2 px-4 py-2 rounded-full glass border-amber-500/30 bg-amber-500/10 text-amber-400 text-sm font-medium animate-fade-in hover:bg-amber-500/20 transition-all duration-300"
+              className="btn-primary focus-ring whitespace-nowrap group"
               aria-label="Book a 15-min discovery call"
             >
-              <span className="w-2 h-2 bg-amber-400 rounded-full animate-pulse" aria-hidden="true" />
-              <span className="hidden sm:inline">Book a Call</span>
+              <Calendar className="w-4 h-4 mr-2 transition-transform duration-500 ease-out group-hover:-translate-y-1 group-hover:rotate-12" aria-hidden="true" />
+              Book a 15-min Call
             </a>
           </div>
 

@@ -63,11 +63,12 @@ const contactMethods: ContactMethod[] = [
     id: "calendly",
     label: "Book a Call",
     value: "30-min Free Audit",
-    href: "#",
+    href: "https://calendly.com/kchanchan2357/30min",
     icon: <Calendar className="w-5 h-5" aria-hidden="true" />,
     color: "#00ff87",
     description: "Schedule a free 30-min automation audit",
     analyticsEvent: "contact_calendly_click",
+    external: true,
   },
   {
     id: "resume",
@@ -103,13 +104,7 @@ export default function ContactMethods() {
   const handleClick = (method: ContactMethod, e: React.MouseEvent<HTMLAnchorElement>) => {
     trackEvent(method.analyticsEvent, method.id);
     
-    // For Calendly, prevent default and show modal/alert
-    if (method.id === "calendly") {
-      e.preventDefault();
-      alert("Calendly integration coming soon! For now, please use WhatsApp or Email to schedule a free audit.");
-    }
-    
-    // Don't prevent default for actual links
+    // All links are real now - let them navigate normally
   };
 
   return (

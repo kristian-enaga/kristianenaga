@@ -275,9 +275,14 @@ const categoryColors = {
 export default function ProjectSection() {
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const [visibleCards, setVisibleCards] = useState<Set<number>>(new Set());
+  const [animatedCards, setAnimatedCards] = useState<Set<number>>(new Set());
   const [archiveOpen, setArchiveOpen] = useState(false);
+  const [mounted, setMounted] = useState(false);
   const observerRef = useRef<IntersectionObserver | null>(null);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const colorObj = (category: string) => {
     return categoryColors[category as keyof typeof categoryColors] || categoryColors.RevOps;
@@ -294,12 +299,14 @@ export default function ProjectSection() {
   };
 
   useEffect(() => {
+    if (!mounted) return;
     observerRef.current = new IntersectionObserver(
       (entries) => {
         entries.forEach((entry) => {
           if (entry.isIntersecting) {
             const index = parseInt(entry.target.getAttribute('data-card-index') || '0');
-            setVisibleCards((prev) => new Set([...prev, index]));
+            setAnimatedCards((prev) => new Set([...prev, index]));
+            observerRef.current?.unobserve(entry.target);
           }
         });
       },
@@ -311,12 +318,13 @@ export default function ProjectSection() {
     });
 
     return () => observerRef.current?.disconnect();
-  }, [archiveOpen]);
+  }, [archiveOpen, mounted]);
 
   const renderProjectCard = (project: Project, index: number, isArchive = false) => {
     const color = colorObj(project.category).main;
     const second = colorObj(project.category).second;
-    const isVisible = isArchive ? true : visibleCards.has(index);
+    // Server: mounted=false -> always visible. Client: after mount, use animatedCards
+    const isAnimated = !mounted || isArchive ? true : animatedCards.has(index);
     return (
       <article
         key={project.id}
@@ -330,13 +338,11 @@ export default function ProjectSection() {
           e.stopPropagation();
           openProject(project);
         }}
-        className={`relative rounded-2xl p-5 lg:p-6 overflow-hidden transition-all duration-300 ease-out cursor-pointer group hover:scale-101 ${
-          isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-20"
+        className={`relative rounded-2xl p-5 lg:p-6 overflow-hidden cursor-pointer group hover:scale-101 transition-all duration-700 ease-out-cubic ${
+          isAnimated ? "opacity-100 translate-y-0" : "opacity-0 translate-y-20"
         }`}
         style={{
           transitionDelay: `${index * 80}ms`,
-          transitionDuration: '400ms',
-          transitionTimingFunction: 'cubic-bezier(0.16, 1, 0.3, 1)',
           border: `1px solid ${color}40`,
           background: `linear-gradient(145deg, ${color}10, ${color}05, ${second}03)`,
           boxShadow: `0 0 40px ${color}20, 0 0 80px ${color}10, inset 0 1px 0 rgba(255,255,255,0.08)`,

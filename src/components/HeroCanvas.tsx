@@ -207,7 +207,7 @@ export default function HeroCanvas() {
           {metrics.map((m, idx) => (
             <div
               key={m.label}
-              className="glass rounded-2xl p-5 relative overflow-hidden hover-lift" 
+              className="glass rounded-2xl p-5 relative overflow-hidden hover-lift metric-card" 
               style={{ border: `1px solid ${m.color}25`, transitionDelay: `${idx * 80}ms` }}
               role="listitem"
             >
@@ -238,7 +238,7 @@ export default function HeroCanvas() {
             {STAGES.map((stage, i) => (
               <div key={stage.id} className="flex-1 flex items-stretch gap-2">
                 <div
-                  className="relative flex-1 rounded-2xl p-5 flex flex-col gap-2 min-w-0 overflow-hidden hover-lift"
+                  className="relative flex-1 rounded-2xl p-5 flex flex-col gap-2 min-w-0 overflow-hidden hover-lift stage-card"
                   style={{ 
                     background: `linear-gradient(145deg, ${stage.colorSoft}, transparent)`, 
                     border: `1px solid ${stage.color}30`, 

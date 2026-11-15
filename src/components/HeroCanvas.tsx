@@ -80,90 +80,100 @@ function SparkBadge({ spark }: { spark: Spark }) {
       style={{
         left: spark.x,
         top: spark.y,
-        animation: "sparkTrailFade 300ms ease-out forwards",
+        width: 6,
+        height: 6,
+        borderRadius: "50%",
+        background: spark.color,
+        boxShadow: `0 0 12px ${spark.color}, 0 0 24px ${spark.color}`,
+        opacity: 0.9,
+        animation: "sparkFade 0.6s ease-out forwards",
       }}
       aria-hidden="true"
-    >
-      <div className="rounded-full" style={{ width: 8, height: 8, background: spark.color }} />
-      <div
-        className="absolute inset-0 rounded-full"
-        style={{
-          width: 16,
-          height: 16,
-          border: `1px solid ${spark.color}`,
-          opacity: 0.4,
-        }}
-      />
-    </div>
+    />
   );
 }
 
-function Slider({ id, label, value, onChange, color }: { id: string; label: string; value: number; onChange: (v: number) => void; color: string }) {
+function Slider({
+  id,
+  label,
+  value,
+  onChange,
+  color,
+}: {
+  id: string;
+  label: string;
+  value: number;
+  onChange: (v: number) => void;
+  color: string;
+}) {
   return (
-    <div className="space-y-3">
-      <div className="flex items-center justify-between">
-        <label htmlFor={id} className="text-sm font-medium text-white flex items-center gap-2">
-          <span className="w-2 h-2 rounded-full animate-pulse" style={{ background: color }} />
-          {label}
-        </label>
-        <span className="text-sm font-mono font-bold px-2.5 py-1 rounded-lg" style={{ color, background: `${color}1a` }}>
+    <div className="flex flex-col gap-3">
+      <label htmlFor={id} className="text-xs font-medium uppercase tracking-wider text-white/70">
+        {label}
+      </label>
+      <div className="relative flex items-center gap-3">
+        <input
+          type="range"
+          id={id}
+          min="0"
+          max="100"
+          value={value}
+          onChange={(e) => onChange(Number(e.target.value))}
+          className="flex-1 appearance-none h-2 rounded-full bg-white/10 accent-transparent cursor-pointer focus:outline-none"
+          style={{
+            background: `linear-gradient(90deg, ${color} ${value}%, rgba(255,255,255,0.1) ${value}%)`,
+          }}
+          aria-label={label}
+        />
+        <span className="w-10 text-right font-mono text-lg text-white/90" style={{ color }}>
           {value}%
         </span>
-      </div>
-      <input
-        id={id}
-        type="range"
-        min="10"
-        max="100"
-        value={value}
-        onChange={(e) => onChange(parseInt(e.target.value))}
-        className="w-full h-2 appearance-none rounded-full cursor-pointer outline-none"
-        style={{ background: `linear-gradient(90deg, ${color} ${value}%, rgba(255,255,255,0.06) ${value}%)` }}
-        aria-label={label}
-      />
-      <div className="flex justify-between text-[10px] text-slate-500">
-        <span>10%</span>
-        <span>100%</span>
       </div>
     </div>
   );
 }
 
 export default function HeroCanvas() {
-  const [trafficLoad, setTrafficLoad] = useState(50);
-  const [processingEfficiency, setProcessingEfficiency] = useState(39);
-  const [deliverySpeed, setDeliverySpeed] = useState(50);
+  const [mounted, setMounted] = useState(false);
   const [sparks, setSparks] = useState<Spark[]>([]);
+  const [trafficLoad, setTrafficLoad] = useState(72);
+  const [processingEfficiency, setProcessingEfficiency] = useState(88);
+  const [deliverySpeed, setDeliverySpeed] = useState(79);
   const panelRef = useRef<HTMLDivElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const animationRef = useRef<number | null>(null);
+  const sparksRef = useRef<Spark[]>([]);
+  const mousePosRef = useRef({ x: -1000, y: -1000 });
+  const timeRef = useRef(0);
+  const widthRef = useRef(0);
+  const heightRef = useRef(0);
+  const dprRef = useRef(1);
 
-  const processBacklog = Math.max(0, Math.floor((trafficLoad - processingEfficiency) * 0.5));
-  const ingestLag = trafficLoad * 0.2 + 0.4;
-  const deliverOutflow = Math.max(0, parseFloat(((deliverySpeed * 0.6) - processBacklog * 0.8).toFixed(1)));
-
-  const metrics: Metric[] = useMemo(
+  const metrics = useMemo<Metric[]>(
     () => [
-      { label: "Ingest Lag", value: ingestLag.toFixed(1), unit: "ms", color: "#fbbf24" },
-      { label: "Process Backlog", value: String(processBacklog), unit: "leads queued", color: "#ff6b5e" },
-      { label: "Deliver Outflow", value: deliverOutflow.toFixed(1), unit: "leads/sec", color: "#10b981" },
+      { label: "Inbound Signals", value: "12.4k", unit: "/mo", color: "#fbbf24" },
+      { label: "Enriched Leads", value: "9.8k", unit: "/mo", color: "#ff6b5e" },
+      { label: "Outbound Sent", value: "3.2k", unit: "/mo", color: "#dc2626" },
+      { label: "Revenue Recovered", value: "$2.1M", unit: "ARR", color: "#10b981" },
     ],
-    [trafficLoad, processingEfficiency, deliverySpeed]
+    []
   );
 
   const status = useMemo(() => {
-    if (processingEfficiency < 40 || processBacklog > 5) {
+    if (processingEfficiency > 80 && trafficLoad > 50) {
       return {
-        icon: "🚨",
-        label: "BOTTLENECK ALERT",
-        message: "CRITICAL WORKFLOW BACKLOG: Automated AI Enrichment node is throttling CRM ingestion sync.",
-        className: "bg-red-500/10 border-red-500/40 text-red-300 animate-pulse",
+        icon: "💡",
+        label: "STABLE RUNNING",
+        message: "REVENUE ENGINE BALANCED: Live data pipeline running efficiently across HubSpot/Salesforce routes.",
+        className: "bg-emerald-500/10 border-emerald-500/40 text-emerald-300",
       };
     }
-    if (trafficLoad < 25) {
+    if (processingEfficiency < 50 || trafficLoad > 90) {
       return {
-        icon: "💤",
-        label: "BALANCED IDLE",
-        message: "SYSTEM IDLE: Awaiting raw lead ingestion webhook streams.",
-        className: "bg-slate-700/10 border-slate-500/40 text-slate-300",
+        icon: "⚠️",
+        label: "HIGH LOAD DETECTED",
+        message: "PIPELINE PRESSURE: Inbound volume exceeds processing capacity. Auto-scaling recommended.",
+        className: "bg-amber-500/10 border-amber-500/40 text-amber-300",
       };
     }
     return {
@@ -172,27 +182,145 @@ export default function HeroCanvas() {
       message: "REVENUE ENGINE BALANCED: Live data pipeline running efficiently across HubSpot/Salesforce routes.",
       className: "bg-emerald-500/10 border-emerald-500/40 text-emerald-300",
     };
-  }, [processingEfficiency, processBacklog, trafficLoad]);
+  }, [processingEfficiency, trafficLoad, deliverySpeed]);
 
-  const handleSparkTrail = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
-    if (!panelRef.current) return;
-    const rect = panelRef.current.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
-    const spark: Spark = {
-      id: Date.now() + Math.random(),
-      x,
-      y,
-      color: SPARK_COLORS[Math.floor(Math.random() * SPARK_COLORS.length)],
-    };
-    setSparks((prev) => {
-      const next = [...prev.slice(-29), spark];
-      return next.length > MAX_SPARKS ? next.slice(-MAX_SPARKS) : next;
-    });
-    setTimeout(() => {
-      setSparks((prev) => prev.filter((s) => s.id !== spark.id));
-    }, 300);
+  useEffect(() => {
+    setMounted(true);
   }, []);
+
+  // Canvas spark trail - only runs client-side after mount
+  useEffect(() => {
+    if (!mounted) return;
+    
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+
+    const resize = () => {
+      widthRef.current = window.innerWidth;
+      heightRef.current = window.innerHeight;
+      dprRef.current = Math.min(window.devicePixelRatio || 1, 2);
+      canvas.width = widthRef.current * dprRef.current;
+      canvas.height = heightRef.current * dprRef.current;
+      canvas.style.width = `${widthRef.current}px`;
+      canvas.style.height = `${heightRef.current}px`;
+      ctx.setTransform(dprRef.current, 0, 0, dprRef.current, 0, 0);
+    };
+
+    const addSpark = (x: number, y: number) => {
+      const count = 3 + Math.floor(Math.random() * 3);
+      for (let i = 0; i < count; i++) {
+        if (sparksRef.current.length >= MAX_SPARKS) break;
+        
+        const colorIndex = Math.floor(Math.random() * SPARK_COLORS.length);
+        
+        sparksRef.current.push({
+          id: Date.now() + i + Math.random(),
+          x,
+          y,
+          color: SPARK_COLORS[colorIndex],
+        });
+      }
+    };
+
+    const drawSpark = (ctx: CanvasRenderingContext2D, spark: Spark) => {
+      const { x, y, color } = spark;
+      const radius = 2;
+      
+      // Outer glow
+      const outerGrad = ctx.createRadialGradient(x, y, 0, x, y, radius * 8);
+      outerGrad.addColorStop(0, `${color}CC`);
+      outerGrad.addColorStop(0.5, `${color}40`);
+      outerGrad.addColorStop(1, `${color}00`);
+      ctx.fillStyle = outerGrad;
+      ctx.beginPath();
+      ctx.arc(x, y, radius * 8, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Core
+      const coreGrad = ctx.createRadialGradient(x, y, 0, x, y, radius);
+      coreGrad.addColorStop(0, `#FFFFFF`);
+      coreGrad.addColorStop(0.3, color);
+      coreGrad.addColorStop(1, `${color}00`);
+      ctx.fillStyle = coreGrad;
+      ctx.beginPath();
+      ctx.arc(x, y, radius, 0, Math.PI * 2);
+      ctx.fill();
+    };
+
+    const animate = () => {
+      if (!ctx) return;
+      timeRef.current += 0.016;
+
+      const w = widthRef.current;
+      const h = heightRef.current;
+
+      // Clear with slight fade for trails
+      ctx.fillStyle = "rgba(2, 6, 23, 0.3)";
+      ctx.fillRect(0, 0, w, h);
+
+      // Add sparks at mouse position
+      if (mousePosRef.current.x > 0 && mousePosRef.current.y > 0) {
+        addSpark(mousePosRef.current.x, mousePosRef.current.y);
+      }
+
+      // Update and draw sparks
+      const newSparks: Spark[] = [];
+
+      sparksRef.current.forEach((spark) => {
+        // Simple physics
+        spark.x += (Math.random() - 0.5) * 2;
+        spark.y += (Math.random() - 0.5) * 2 - 0.5;
+
+        drawSpark(ctx, spark);
+
+        // Keep for a short time
+        if (Math.random() > 0.02) {
+          newSparks.push(spark);
+        }
+      });
+
+      sparksRef.current = newSparks.slice(-MAX_SPARKS);
+      animationRef.current = requestAnimationFrame(animate);
+    };
+
+    resize();
+    animate();
+
+    const handleMouseMove = (e: MouseEvent) => {
+      if (panelRef.current) {
+        const rect = panelRef.current.getBoundingClientRect();
+        mousePosRef.current = { x: e.clientX - rect.left, y: e.clientY - rect.top };
+      }
+    };
+
+    const handleTouchMove = (e: TouchEvent) => {
+      if (panelRef.current && e.touches.length > 0) {
+        const rect = panelRef.current.getBoundingClientRect();
+        mousePosRef.current = { x: e.touches[0].clientX - rect.left, y: e.touches[0].clientY - rect.top };
+      }
+    };
+
+    const handleResize = () => {
+      resize();
+    };
+
+    window.addEventListener("mousemove", handleMouseMove);
+    window.addEventListener("touchmove", handleTouchMove, { passive: true });
+    window.addEventListener("resize", handleResize);
+
+    return () => {
+      window.removeEventListener("mousemove", handleMouseMove);
+      window.removeEventListener("touchmove", handleTouchMove);
+      window.removeEventListener("resize", handleResize);
+      if (animationRef.current) cancelAnimationFrame(animationRef.current);
+    };
+  }, [mounted]);
+
+  // Only show canvas after mount
+  const showCanvas = mounted && typeof window !== "undefined";
 
   return (
     <section className="relative min-h-[90vh] flex flex-col pt-24 pb-12 overflow-hidden" aria-labelledby="hero-title">
@@ -200,6 +328,13 @@ export default function HeroCanvas() {
         <div className="absolute inset-0 bg-gradient-to-b from-transparent via-background to-background opacity-80" />
         <div className="absolute top-1/5 left-1/10 w-[500px] h-[500px] bg-red-600/5 rounded-full blur-[200px]" />
         <div className="absolute bottom-1/5 right-1/8 w-[450px] h-[450px] bg-amber-600/5 rounded-full blur-[200px]" />
+        {showCanvas && (
+          <canvas
+            ref={canvasRef}
+            className="fixed inset-0 z-0 pointer-events-none"
+            aria-hidden="true"
+          />
+        )}
       </div>
 
       <div className="relative z-10 w-full max-w-7xl mx-auto px-6 lg:px-12 py-8 flex flex-col flex-1">
@@ -236,7 +371,12 @@ export default function HeroCanvas() {
           ))}
         </div>
 
-        <div ref={panelRef} className="relative glass rounded-2xl p-5 lg:p-8 border border-white/10 mb-8 overflow-hidden" style={{ animation: "heroFadeUp 0.8s ease-out 0.2s both" }} onMouseMove={handleSparkTrail}>
+        <div ref={panelRef} className="relative glass rounded-2xl p-5 lg:p-8 border border-white/10 mb-8 overflow-hidden" style={{ animation: "heroFadeUp 0.8s ease-out 0.2s both" }} onMouseMove={mounted ? (e: React.MouseEvent<HTMLDivElement>) => {
+          if (panelRef.current) {
+            const rect = panelRef.current.getBoundingClientRect();
+            mousePosRef.current = { x: e.clientX - rect.left, y: e.clientY - rect.top };
+          }
+        } : undefined}>
           <div className="flex items-center justify-between mb-6 flex-wrap gap-3">
             <h2 className="text-lg lg:text-xl font-bold text-white">Agentic GTM Lead Infrastructure</h2>
             <div className="flex items-center gap-2 text-[10px] font-mono">
@@ -245,10 +385,6 @@ export default function HeroCanvas() {
               <span className="px-2 py-1 rounded-full bg-amber-500/15 text-amber-400">4-STAGE</span>
             </div>
           </div>
-
-          {sparks.map((s) => (
-            <SparkBadge key={s.id} spark={s} />
-          ))}
 
           <div className="flex flex-col md:flex-row items-stretch gap-3 md:gap-2">
             {STAGES.map((stage, i) => (

@@ -3,7 +3,7 @@
 import dynamic from "next/dynamic";
 
 const HeroCanvas = dynamic(() => import("@/components/HeroCanvas").then(mod => mod.default), {
-  ssr: false,
+  ssr: true,
   loading: () => (
     <section className="relative min-h-[90vh] flex items-center justify-center pt-20 overflow-hidden" aria-labelledby="hero-title">
       <div className="absolute inset-0" aria-hidden="true">

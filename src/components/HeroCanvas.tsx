@@ -185,18 +185,14 @@ export default function HeroCanvas() {
       y,
       color: SPARK_COLORS[Math.floor(Math.random() * SPARK_COLORS.length)],
     };
-    setSparks((prev) => [...prev.slice(-30), spark]);
+    setSparks((prev) => {
+      const next = [...prev.slice(-29), spark];
+      return next.length > MAX_SPARKS ? next.slice(-MAX_SPARKS) : next;
+    });
     setTimeout(() => {
       setSparks((prev) => prev.filter((s) => s.id !== spark.id));
     }, 300);
   }, []);
-
-  useEffect(() => {
-    const MAX_CAP = MAX_SPARKS;
-    if (sparks.length > MAX_CAP) {
-      setSparks((prev) => prev.slice(prev.length - MAX_CAP));
-    }
-  }, [sparks]);
 
   return (
     <section className="relative min-h-[90vh] flex flex-col pt-24 pb-12 overflow-hidden" aria-labelledby="hero-title">

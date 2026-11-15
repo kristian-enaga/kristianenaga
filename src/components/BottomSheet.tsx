@@ -15,6 +15,13 @@ export default function BottomSheet() {
   const startYRef = useRef(0);
   const currentYRef = useRef(0);
 
+  const closeSheet = () => {
+    if (formStatus !== 'idle') return;
+    setIsAnimating(true);
+    setIsOpen(false);
+    setTimeout(() => setIsAnimating(false), 300);
+  };
+
   // Listen for trigger events from header, hero, etc.
   useEffect(() => {
     const handleOpen = () => {
@@ -106,18 +113,11 @@ export default function BottomSheet() {
         if (sheetRef.current) {
           sheetRef.current.style.transform = 'translateY(0)';
         }
-      }
-      
-      // Restore body scroll
-      document.body.style.overflow = 'unset';
+}
     }
-  };
-
-  const closeSheet = () => {
-    if (formStatus !== 'idle') return;
-    setIsAnimating(true);
-    setIsOpen(false);
-    setTimeout(() => setIsAnimating(false), 300);
+    
+    // Restore body scroll
+    document.body.style.overflow = 'unset';
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {

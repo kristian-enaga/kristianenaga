@@ -153,7 +153,7 @@ export default function HeroCanvas() {
     () => [
       { label: "Inbound Signals", value: "1.2k", unit: "/mo", color: "#fbbf24" },
       { label: "Enriched Leads", value: "850+", unit: "/mo", color: "#ff6b5e" },
-      { label: "Outbound Sent", value: "420+", unit: "/mo", color: "#dc2626" },
+      { label: "Outbound Sent", value: "500+", unit: "/mo", color: "#dc2626" },
       { label: "Hours Saved", value: "1,200+", unit: "/yr", color: "#10b981" },
     ],
     []
@@ -348,13 +348,39 @@ export default function HeroCanvas() {
             <br />
             <span className="text-gradient-mint">That Run While You Sleep</span>
           </h1>
-          <p className="text-lg sm:text-xl text-muted max-w-3xl mx-auto leading-relaxed whitespace-pre-line">
-            Inbound:  scrape → AI enrich → waterfall route → CRM sync
-            Outbound: signal-based sequences, deliverability infra, reply handling
-            Infra:    OCI Ubuntu, Docker, Caddy, Tailscale, MCP servers — 99.9% uptime
-
-            Zero silent failures. 1,200+ hrs saved/yr. Deployed, monitored, owned.
-          </p>
+          <div className="text-lg sm:text-xl text-muted max-w-3xl mx-auto leading-relaxed whitespace-pre-line text-left md:text-center">
+            <div className="flex flex-col items-center md:items-start gap-2 mb-4">
+              <span className="flex items-center gap-2 text-white/90">
+                <span className="w-2 h-2 rounded-full bg-amber-400" />
+                Inbound: scrape → AI enrich → waterfall route → CRM sync
+              </span>
+              <span className="flex items-center gap-2 text-white/90">
+                <span className="w-2 h-2 rounded-full bg-emerald-400" />
+                Outbound: signal-based sequences, deliverability infra, reply handling
+              </span>
+              <span className="flex items-center gap-2 text-white/90">
+                <span className="w-2 h-2 rounded-full bg-violet-400" />
+                Infra: OCI Ubuntu, Docker, Caddy, Tailscale, MCP servers — 99.9% uptime*
+              </span>
+            </div>
+            <p className="text-sm text-muted/60 mt-2 max-w-xl mx-auto">
+              *Self-hosted on your cloud — you own the data, the infra, the uptime. No vendor lock-in.
+            </p>
+            <div className="flex items-center justify-center gap-6 mt-4 text-sm">
+              <span className="flex items-center gap-1.5 text-white/80">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+                Zero silent failures
+              </span>
+              <span className="flex items-center gap-1.5 text-white/80">
+                <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
+                1,200+ hrs saved/yr
+              </span>
+              <span className="flex items-center gap-1.5 text-white/80">
+                <span className="w-1.5 h-1.5 rounded-full bg-violet-400" />
+                Deployed, monitored, owned
+              </span>
+            </div>
+          </div>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8" style={{ animation: "heroFadeUp 0.8s ease-out 0.1s both" }}>

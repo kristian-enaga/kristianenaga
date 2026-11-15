@@ -42,7 +42,7 @@ export default function Header() {
             <span className="hidden sm:inline">KRISTIAN JAY EÑAGA</span>
             <span className="hidden md:inline-flex items-center gap-1.5 text-muted text-xs font-medium uppercase tracking-wider ml-1 flex-shrink-0">
               <span className="w-2 h-2 bg-mint rounded-full animate-pulse" aria-hidden="true" />
-              GTM Automation Engineer
+              AI GTM Engineer
             </span>
           </Link>
 

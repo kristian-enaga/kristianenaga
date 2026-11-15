@@ -8,7 +8,7 @@ import ContactMethods from "@/components/ContactMethods";
 import SkillsTagCloud from "@/components/SkillsTagCloud";
 import Contact from "@/components/Contact";
 import Footer from "@/components/Footer";
-import ParticleTrail from "@/components/ParticleTrail";
+import BokehBackground from "@/components/BokehBackground";
 import EmailCaptureModal from "@/components/EmailCaptureModal";
 import BottomSheet from "@/components/BottomSheet";
 
@@ -26,7 +26,7 @@ export default function Home() {
         <ContactMethods />
         <Contact />
       </main>
-      <ParticleTrail />
+      <BokehBackground />
       <EmailCaptureModal />
       <BottomSheet />
       <Footer />

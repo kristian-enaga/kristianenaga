@@ -341,17 +341,18 @@ export default function HeroCanvas() {
         <div className="text-center mb-10" style={{ animation: "heroFadeUp 0.8s ease-out both" }}>
           <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full glass border-mint/20 mb-6">
             <span className="w-2 h-2 bg-mint rounded-full animate-pulse" />
-            <span className="text-sm font-medium text-mint">AI GTM Engineer — Self-Hosted Inbound Infrastructure</span>
+            <span className="text-sm font-medium text-mint">AI GTM Engineer — Self-Hosted Revenue Infrastructure</span>
           </div>
           <h1 id="hero-title" className="text-4xl sm:text-5xl lg:text-6xl xl:text-7xl font-bold tracking-tight leading-[1.02] text-white mb-6">
-            I Build Autonomous Inbound
+            I Build Autonomous Lead Engines
             <br />
-            <span className="text-gradient-mint">Lead Engines</span>
-            <br />
-            That Run While You Sleep
+            <span className="text-gradient-mint">That Run While You Sleep</span>
           </h1>
-          <p className="text-lg sm:text-xl text-muted max-w-3xl mx-auto leading-relaxed">
-            Self-hosted n8n + MCP agents on OCI. 4-stage pipeline: scrape → AI enrich → waterfall route → CRM sync. 
+          <p className="text-lg sm:text-xl text-muted max-w-3xl mx-auto leading-relaxed whitespace-pre-line">
+            Inbound:  scrape → AI enrich → waterfall route → CRM sync
+            Outbound: signal-based sequences, deliverability infra, reply handling
+            Infra:    OCI Ubuntu, Docker, Caddy, Tailscale, MCP servers — 99.9% uptime
+
             Zero silent failures. 1,200+ hrs saved/yr. Deployed, monitored, owned.
           </p>
         </div>

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { Github, ExternalLink, Play, ArrowRight, X, Zap, Layers, Terminal, Shield, LayoutList } from "lucide-react";
+import { Github, ExternalLink, Play, ArrowRight, X, Zap, Layers, Terminal, Shield, LayoutList, Archive, ChevronDown, ChevronUp } from "lucide-react";
 
 interface Project {
   id: string;
@@ -261,6 +261,11 @@ const projectsData: Project[] = [
   },
 ];
 
+const featuredIds = ["01", "05", "08"];
+
+const featuredProjects = projectsData.filter((p) => featuredIds.includes(p.id));
+const archiveProjects = projectsData.filter((p) => !featuredIds.includes(p.id));
+
 const categoryColors = {
   "RevOps": { main: "#dc2626", second: "#ef4444" },
   "GTM Intel": { main: "#22c55e", second: "#86efac" },
@@ -271,6 +276,7 @@ export default function ProjectSection() {
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [visibleCards, setVisibleCards] = useState<Set<number>>(new Set());
+  const [archiveOpen, setArchiveOpen] = useState(false);
   const observerRef = useRef<IntersectionObserver | null>(null);
 
   const colorObj = (category: string) => {
@@ -287,7 +293,6 @@ export default function ProjectSection() {
     setSelectedProject(null);
   };
 
-  // Intersection Observer for scroll-triggered card animations
   useEffect(() => {
     observerRef.current = new IntersectionObserver(
       (entries) => {
@@ -308,6 +313,121 @@ export default function ProjectSection() {
     return () => observerRef.current?.disconnect();
   }, []);
 
+  const renderProjectCard = (project: Project, index: number, isArchive = false) => {
+    const color = colorObj(project.category).main;
+    const second = colorObj(project.category).second;
+    const isVisible = visibleCards.has(index);
+    return (
+      <article
+        key={project.id}
+        role="listitem"
+        data-card-index={index}
+        onClick={(e) => {
+          e.stopPropagation();
+          openProject(project);
+        }}
+        onTouchStart={(e) => {
+          e.stopPropagation();
+          openProject(project);
+        }}
+        className={`relative rounded-2xl p-5 lg:p-6 overflow-hidden transition-all duration-300 ease-out cursor-pointer group hover:scale-101 ${
+          isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-20"
+        }`}
+        style={{
+          transitionDelay: `${index * 80}ms`,
+          transitionDuration: '400ms',
+          transitionTimingFunction: 'cubic-bezier(0.16, 1, 0.3, 1)',
+          border: `1px solid ${color}40`,
+          background: `linear-gradient(145deg, ${color}10, ${color}05, ${second}03)`,
+          boxShadow: `0 0 40px ${color}20, 0 0 80px ${color}10, inset 0 1px 0 rgba(255,255,255,0.08)`,
+        }}
+      >
+        <div
+          className="absolute inset-0 rounded-2xl pointer-events-none opacity-60"
+          style={{ background: `radial-gradient(ellipse at center, ${color}35 0%, ${color}15 40%, ${color}00 70%)` }}
+          aria-hidden="true"
+        />
+        <div
+          className="absolute inset-0 rounded-2xl pointer-events-none overflow-hidden"
+          aria-hidden="true"
+        >
+          <div
+            className="absolute -top-1/2 -left-1/2 w-full h-full animate-shimmer"
+            style={{
+              background: `linear-gradient(135deg, transparent 30%, ${color}50 50%, transparent 70%)`,
+              transform: 'translateX(-100%)',
+              transformOrigin: 'center',
+            }}
+          />
+        </div>
+        <div
+          className="absolute -inset-px rounded-2xl pointer-events-none transition-all duration-200 opacity-0 group-hover:opacity-100"
+          style={{
+            boxShadow: `0 0 30px ${color}80, 0 0 60px ${color}60, 0 0 120px ${color}40`,
+            animation: 'borderPulse 1.5s ease-in-out infinite'
+          }}
+          aria-hidden="true"
+        />
+        <div
+          className="absolute inset-0 rounded-2xl pointer-events-none transition-opacity duration-200 opacity-0 group-hover:opacity-100"
+          style={{ background: `radial-gradient(ellipse at center, ${color}40 0%, ${color}20 40%, ${color}00 70%)` }}
+          aria-hidden="true"
+        />
+        <div
+          className="absolute inset-0 rounded-2xl pointer-events-none transition-opacity duration-200 opacity-0 group-hover:opacity-100"
+          style={{ background: `radial-gradient(ellipse at center, ${color}60 0%, ${color}00 50%)` }}
+          aria-hidden="true"
+        />
+        <div className="relative z-10">
+          <div className="flex items-start justify-between mb-3">
+            <span className="text-xs font-bold text-white/40 tracking-wider uppercase">System {project.number}</span>
+            <span className="px-2 py-0.5 rounded text-[10px] font-medium text-white/90 backdrop-blur-sm group-hover:scale-105 transition-transform duration-300" style={{ background: `linear-gradient(135deg, ${color}40, ${color}20)`, border: `1px solid ${color}60` }}>
+              {project.category}
+            </span>
+          </div>
+          <div className="mb-3 p-3 rounded-xl backdrop-blur-sm transition-all duration-200 group-hover:scale-[1.03] group-hover:shadow-[0_0_30px_${color}60]" style={{ background: `linear-gradient(135deg, ${color}25, ${color}12)`, border: `1px solid ${color}40`, boxShadow: `0 0 25px ${color}30` }}>
+            <div className="flex items-center gap-2">
+              <Zap className="w-3.5 h-3.5 transition-transform group-hover:scale-125" style={{ color }} aria-hidden="true" />
+              <span className="text-xs font-semibold" style={{ color: `${color}ff` }}>
+                {project.businessRelevance}
+              </span>
+            </div>
+          </div>
+          <h3 className="text-lg font-bold text-white mb-2 leading-tight group-hover:text-mint transition-colors duration-200">{project.title}</h3>
+          <div className="mb-3 flex flex-wrap gap-1.5" role="list" aria-label="Technologies">
+            {project.tech.slice(0, 4).map((t, i) => (
+              <span key={i} className="px-2 py-1 rounded text-[10px] font-medium text-white/85 backdrop-blur-sm transition-all duration-200 hover:scale-110 group-hover:bg-white/20 group-hover:text-white group-hover:shadow-[0_0_15px_${color}60]" style={{ background: `linear-gradient(135deg, ${color}30, ${color}15)`, border: `1px solid ${color}50` }}>
+                {t}
+              </span>
+            ))}
+          </div>
+          <div className="flex items-center gap-3 pt-3 border-t border-white/8">
+            <a
+              href={`https://www.loom.com/share/${project.loom}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex-1 flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl text-xs font-semibold text-white/90 glass backdrop-blur-sm transition-all duration-200 ease-out group-hover:scale-[1.03] group-hover:shadow-[0_0_25px_${color}80]"
+              style={{ background: `linear-gradient(135deg, ${color}25, ${color}12)`, border: `1px solid ${color}40`, boxShadow: `0 0 20px ${color}30` }}
+            >
+              <Play className="w-3.5 h-3.5 transition-transform group-hover:scale-115" aria-hidden="true" />
+              <span>Watch How It Works (Video)</span>
+            </a>
+            <a
+              href={`https://github.com/kristian-enaga/${project.repo}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex-1 flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl text-xs font-semibold text-white/90 glass backdrop-blur-sm transition-all duration-200 ease-out group-hover:scale-[1.03] group-hover:shadow-[0_0_25px_${color}80]"
+              style={{ background: `linear-gradient(135deg, ${color}25, ${color}12)`, border: `1px solid ${color}40`, boxShadow: `0 0 20px ${color}30` }}
+            >
+              <Github className="w-3.5 h-3.5 transition-transform group-hover:rotate-15" aria-hidden="true" />
+              <span>Code</span>
+            </a>
+          </div>
+        </div>
+      </article>
+    );
+  };
+
   return (
     <section id="projects" className="relative py-24 px-6 lg:px-12 z-10" aria-labelledby="projects-heading">
       <div className="max-w-7xl mx-auto position-relative z-20">
@@ -319,153 +439,57 @@ export default function ProjectSection() {
             Working Systems
           </h2>
           <p className="text-muted text-sm mt-2">
-            Ten production automations solving daily business operations. Click any card to see full details.
+            Three commercial-grade automations driving revenue today. Eight more in the archive below.
           </p>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8" role="list">
-          {projectsData.map((project, index) => {
-            const color = colorObj(project.category).main;
-            const second = colorObj(project.category).second;
-            const isVisible = visibleCards.has(index);
-            return (
-              <article
-                key={project.id}
-                role="listitem"
-                data-card-index={index}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  openProject(project);
-                }}
-                onTouchStart={(e) => {
-                  e.stopPropagation();
-                  openProject(project);
-                }}
-                className={`relative rounded-2xl p-5 lg:p-6 overflow-hidden transition-all duration-300 ease-out cursor-pointer group hover:scale-101 ${
-                  isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-20"
-                }`}
-                style={{
-                  transitionDelay: `${index * 80}ms`,
-                  transitionDuration: '400ms',
-                  transitionTimingFunction: 'cubic-bezier(0.16, 1, 0.3, 1)',
-                  border: `1px solid ${color}40`,
-                  background: `linear-gradient(145deg, ${color}10, ${color}05, ${second}03)`,
-                  boxShadow: `0 0 40px ${color}20, 0 0 80px ${color}10, inset 0 1px 0 rgba(255,255,255,0.08)`,
-                }}
-              >
-                {/* Persistent ambient glow - BRIGHTER */}
-                <div
-                  className="absolute inset-0 rounded-2xl pointer-events-none opacity-60"
-                  style={{ background: `radial-gradient(ellipse at center, ${color}35 0%, ${color}15 40%, ${color}00 70%)` }}
-                  aria-hidden="true"
-                />
+        <div className="space-y-16">
+          <section aria-labelledby="featured-heading" className="space-y-6">
+            <div className="flex items-center justify-between">
+              <h3 id="featured-heading" className="text-xl lg:text-2xl font-bold text-white flex items-center gap-2">
+                <span className="w-8 h-8 rounded-xl flex items-center justify-center text-white" style={{ background: "linear-gradient(135deg, #dc2626, #ef4444)" }}>
+                  <Zap className="w-5 h-5" aria-hidden="true" />
+                </span>
+                Featured — Commercial Winners
+              </h3>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8" role="list">
+              {featuredProjects.map((project, index) => renderProjectCard(project, index))}
+            </div>
+          </section>
 
-                {/* Animated shimmer sweep on hover - BRIGHTER */}
-                <div
-                  className="absolute inset-0 rounded-2xl pointer-events-none overflow-hidden"
-                  aria-hidden="true"
-                >
-                  <div
-                    className="absolute -top-1/2 -left-1/2 w-full h-full animate-shimmer"
-                    style={{
-                      background: `linear-gradient(135deg, transparent 30%, ${color}50 50%, transparent 70%)`,
-                      transform: 'translateX(-100%)',
-                      transformOrigin: 'center',
-                    }}
-                  />
+          <section aria-labelledby="archive-heading" className="space-y-6">
+            <button
+              onClick={() => setArchiveOpen(!archiveOpen)}
+              className="w-full flex items-center justify-between px-6 py-4 rounded-2xl glass border-white/10 hover:border-white/20 transition-all duration-300 focus-ring"
+              aria-expanded={archiveOpen}
+              aria-controls="archive-projects"
+            >
+              <h3 id="archive-heading" className="text-xl font-semibold text-white flex items-center gap-3">
+                <span className="w-10 h-10 rounded-xl flex items-center justify-center text-white/80" style={{ background: "linear-gradient(135deg, rgba(255,255,255,0.05), rgba(255,255,255,0.02))", border: "1px solid rgba(255,255,255,0.08)" }}>
+                  <Archive className="w-5 h-5" aria-hidden="true" />
+                </span>
+                <span>Archive — {archiveProjects.length} Additional Systems</span>
+              </h3>
+              {archiveOpen ? <ChevronUp className="w-5 h-5 text-muted transition-transform duration-300" aria-hidden="true" /> : <ChevronDown className="w-5 h-5 text-muted transition-transform duration-300" aria-hidden="true" />}
+            </button>
+            {archiveOpen && (
+              <div id="archive-projects" className="animate-fade-in mt-6" role="list">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8">
+                  {archiveProjects.map((project, index) => renderProjectCard(project, featuredProjects.length + index, true))}
                 </div>
-
-                {/* STRONG border glow on hover - MUCH BRIGHTER */}
-                <div
-                  className="absolute -inset-px rounded-2xl pointer-events-none transition-all duration-200 opacity-0 group-hover:opacity-100"
-                  style={{ 
-                    boxShadow: `0 0 30px ${color}80, 0 0 60px ${color}60, 0 0 120px ${color}40`,
-                    animation: 'borderPulse 1.5s ease-in-out infinite'
-                  }}
-                  aria-hidden="true"
-                />
-
-                {/* Inner FULL CARD glow on hover - VERY BRIGHT */}
-                <div
-                  className="absolute inset-0 rounded-2xl pointer-events-none transition-opacity duration-200 opacity-0 group-hover:opacity-100"
-                  style={{ background: `radial-gradient(ellipse at center, ${color}40 0%, ${color}20 40%, ${color}00 70%)` }}
-                  aria-hidden="true"
-                />
-
-                {/* Additional intense core glow on hover */}
-                <div
-                  className="absolute inset-0 rounded-2xl pointer-events-none transition-opacity duration-200 opacity-0 group-hover:opacity-100"
-                  style={{ background: `radial-gradient(ellipse at center, ${color}60 0%, ${color}00 50%)` }}
-                  aria-hidden="true"
-                />
-
-                <div className="relative z-10">
-                  <div className="flex items-start justify-between mb-3">
-                    <span className="text-xs font-bold text-white/40 tracking-wider uppercase">System {project.number}</span>
-                    <span className="px-2 py-0.5 rounded text-[10px] font-medium text-white/90 backdrop-blur-sm group-hover:scale-105 transition-transform duration-300" style={{ background: `linear-gradient(135deg, ${color}40, ${color}20)`, border: `1px solid ${color}60` }}>
-                      {project.category}
-                    </span>
-                  </div>
-
-                  {/* Business Benefit Badge - GLOWS on hover */}
-                  <div className="mb-3 p-3 rounded-xl backdrop-blur-sm transition-all duration-200 group-hover:scale-[1.03] group-hover:shadow-[0_0_30px_${color}60]" style={{ background: `linear-gradient(135deg, ${color}25, ${color}12)`, border: `1px solid ${color}40`, boxShadow: `0 0 25px ${color}30` }}>
-                    <div className="flex items-center gap-2">
-                      <Zap className="w-3.5 h-3.5 transition-transform group-hover:scale-125" style={{ color }} aria-hidden="true" />
-                      <span className="text-xs font-semibold" style={{ color: `${color}ff` }}>
-                        {project.businessRelevance}
-                      </span>
-                    </div>
-                  </div>
-
-                  <h3 className="text-lg font-bold text-white mb-2 leading-tight group-hover:text-mint transition-colors duration-200">{project.title}</h3>
-
-                  <div className="mb-3 flex flex-wrap gap-1.5" role="list" aria-label="Technologies">
-                    {project.tech.slice(0, 4).map((t, i) => (
-                      <span key={i} className="px-2 py-1 rounded text-[10px] font-medium text-white/85 backdrop-blur-sm transition-all duration-200 hover:scale-110 group-hover:bg-white/20 group-hover:text-white group-hover:shadow-[0_0_15px_${color}60]" style={{ background: `linear-gradient(135deg, ${color}30, ${color}15)`, border: `1px solid ${color}50` }}>
-                        {t}
-                      </span>
-                    ))}
-                  </div>
-
-                  <div className="flex items-center gap-3 pt-3 border-t border-white/8">
-                    <a
-                      href={`https://www.loom.com/share/${project.loom}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex-1 flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl text-xs font-semibold text-white/90 glass backdrop-blur-sm transition-all duration-200 ease-out group-hover:scale-[1.03] group-hover:shadow-[0_0_25px_${color}80]"
-                      style={{ background: `linear-gradient(135deg, ${color}25, ${color}12)`, border: `1px solid ${color}40`, boxShadow: `0 0 20px ${color}30` }}
-                    >
-                      <Play className="w-3.5 h-3.5 transition-transform group-hover:scale-115" aria-hidden="true" />
-                      <span>Watch How It Works (Video)</span>
-                    </a>
-                    <a
-                      href={`https://github.com/kristian-enaga/${project.repo}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex-1 flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl text-xs font-semibold text-white/90 glass backdrop-blur-sm transition-all duration-200 ease-out group-hover:scale-[1.03] group-hover:shadow-[0_0_25px_${color}80]"
-                      style={{ background: `linear-gradient(135deg, ${color}25, ${color}12)`, border: `1px solid ${color}40`, boxShadow: `0 0 20px ${color}30` }}
-                    >
-                      <Github className="w-3.5 h-3.5 transition-transform group-hover:rotate-15" aria-hidden="true" />
-                      <span>Code</span>
-                    </a>
-                  </div>
-                </div>
-              </article>
-            );
-          })}
+              </div>
+            )}
+          </section>
         </div>
 
-        {/* Right Sidebar - slides in on click */}
         {isSidebarOpen && selectedProject && (
           <>
-            {/* Backdrop - click to close */}
             <div
               className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm transition-opacity duration-300"
               onClick={closeProject}
               aria-hidden="true"
             />
-
-            {/* Sidebar Content */}
             <div
               className="fixed inset-y-0 right-0 z-50 w-full max-w-[460px] transform transition-transform duration-500 ease-out-cubic translate-x-0 pointer-events-auto bg-white/5 border-l border-white/10 shadow-2xl flex flex-col"
               role="dialog"
@@ -473,7 +497,6 @@ export default function ProjectSection() {
               aria-labelledby="sidebar-title"
               style={{ backdropFilter: "blur(20px)", background: "rgba(2, 6, 23, 0.95)", height: "100vh", maxHeight: "100vh" }}
             >
-              {/* Header - fixed at top */}
               <div className="flex-shrink-0 p-5 border-b border-white/10 flex items-center justify-between relative z-10">
                 <div className="relative z-10">
                   <h3 id="sidebar-title" className="text-xl font-bold text-white">System {selectedProject.number}</h3>
@@ -487,11 +510,7 @@ export default function ProjectSection() {
                   <X className="w-5 h-5" aria-hidden="true" />
                 </button>
               </div>
-
-              {/* Scrollable Content - proper flex containment */}
               <div className="flex-1 overflow-y-auto max-h-[calc(100vh-80px)] p-5 lg:p-6 space-y-6 custom-scrollbar">
-                
-                {/* Title */}
                 <div className="relative z-10">
                   <h2 className="text-2xl font-bold text-white mb-2 leading-tight">{selectedProject.title}</h2>
                   <div className="flex flex-wrap gap-2 mb-4" role="list" aria-label="Technologies">
@@ -502,8 +521,6 @@ export default function ProjectSection() {
                     ))}
                   </div>
                 </div>
-
-                {/* What It Solves */}
                 <section className="relative z-10 animate-[fadeIn_0.5s_ease-out]">
                   <div className="flex items-center gap-2 mb-2">
                     <FileText className="w-4 h-4 text-indigo-400" aria-hidden="true" />
@@ -511,8 +528,6 @@ export default function ProjectSection() {
                   </div>
                   <p className="text-white/95 leading-relaxed text-lg">{selectedProject.businessProblem}</p>
                 </section>
-
-                {/* Automated Solution */}
                 <section className="relative z-10 animate-[fadeIn_0.5s_ease-out]">
                   <div className="flex items-center gap-2 mb-2">
                     <Zap className="w-4 h-4 text-mint" aria-hidden="true" />
@@ -520,8 +535,6 @@ export default function ProjectSection() {
                   </div>
                   <p className="text-white/95 leading-relaxed text-lg">{selectedProject.whatItDoes}</p>
                 </section>
-
-                {/* Technical Rigor */}
                 <section className="relative z-10 animate-[fadeIn_0.5s_ease-out]">
                   <div className="flex items-center gap-2 mb-2">
                     <Layers className="w-4 h-4 text-purple-400" aria-hidden="true" />
@@ -538,8 +551,6 @@ export default function ProjectSection() {
                     ))}
                   </div>
                 </section>
-
-                {/* Architecture */}
                 <section className="relative z-10 animate-[fadeIn_0.5s_ease-out]">
                   <div className="flex items-center gap-2 mb-3">
                     <Layers className="w-4 h-4 text-purple-400" aria-hidden="true" />
@@ -561,8 +572,6 @@ export default function ProjectSection() {
                     ))}
                   </div>
                 </section>
-
-                {/* Business Impact */}
                 <section className="relative z-10 animate-[fadeIn_0.5s_ease-out]">
                   <div className="flex items-center gap-2 mb-3">
                     <Shield className="w-4 h-4 text-amber-400" aria-hidden="true" />
@@ -570,8 +579,6 @@ export default function ProjectSection() {
                   </div>
                   <p className="text-white/95 leading-relaxed text-lg">{selectedProject.businessRelevance}</p>
                 </section>
-
-                {/* Technical Implementation */}
                 <section className="relative z-10 animate-[fadeIn_0.5s_ease-out]">
                   <div className="flex items-center gap-2 mb-3">
                     <LayoutList className="w-4 h-4 text-cyan-400" aria-hidden="true" />
@@ -588,8 +595,6 @@ export default function ProjectSection() {
                     ))}
                   </ul>
                 </section>
-
-                {/* Actions */}
                 <div className="relative z-10 pt-4 border-t border-white/10">
                   <h5 className="text-xs font-semibold uppercase tracking-wider text-muted mb-4">Quick Access</h5>
                   <div className="flex flex-wrap gap-2">

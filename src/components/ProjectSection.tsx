@@ -311,12 +311,12 @@ export default function ProjectSection() {
     });
 
     return () => observerRef.current?.disconnect();
-  }, []);
+  }, [archiveOpen]);
 
   const renderProjectCard = (project: Project, index: number, isArchive = false) => {
     const color = colorObj(project.category).main;
     const second = colorObj(project.category).second;
-    const isVisible = visibleCards.has(index);
+    const isVisible = isArchive ? true : visibleCards.has(index);
     return (
       <article
         key={project.id}

@@ -8,8 +8,7 @@ import ContactMethods from "@/components/ContactMethods";
 import SkillsTagCloud from "@/components/SkillsTagCloud";
 import Contact from "@/components/Contact";
 import Footer from "@/components/Footer";
-import MouseTrail from "@/components/MouseTrail";
-import CursorGlow from "@/components/CursorGlow";
+import ParticleTrail from "@/components/ParticleTrail";
 import EmailCaptureModal from "@/components/EmailCaptureModal";
 import BottomSheet from "@/components/BottomSheet";
 
@@ -27,8 +26,7 @@ export default function Home() {
         <ContactMethods />
         <Contact />
       </main>
-      <MouseTrail />
-      <CursorGlow />
+      <ParticleTrail />
       <EmailCaptureModal />
       <BottomSheet />
       <Footer />

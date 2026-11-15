@@ -109,27 +109,6 @@ export default function HeroCanvas() {
   const [processingEfficiency, setProcessingEfficiency] = useState(88);
   const [deliverySpeed, setDeliverySpeed] = useState(79);
   const panelRef = useRef<HTMLDivElement>(null);
-  const sectionRefs = useRef<(HTMLDivElement | null)[]>([]);
-
-  // Intersection observer for scroll-triggered animations
-  useEffect(() => {
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            entry.target.classList.add("in-view");
-          }
-        });
-      },
-      { threshold: 0.1, rootMargin: "0px 0px -50px 0px" }
-    );
-
-    sectionRefs.current.forEach((el) => {
-      if (el) observer.observe(el);
-    });
-
-    return () => observer.disconnect();
-  }, []);
 
   const metrics = useMemo<Metric[]>(
     () => [
@@ -228,8 +207,7 @@ export default function HeroCanvas() {
           {metrics.map((m, idx) => (
             <div
               key={m.label}
-              ref={(el) => { sectionRefs.current[idx] = el; }}
-              className="glass rounded-2xl p-5 relative overflow-hidden hover-lift scroll-reveal" 
+              className="glass rounded-2xl p-5 relative overflow-hidden hover-lift" 
               style={{ border: `1px solid ${m.color}25`, transitionDelay: `${idx * 80}ms` }}
               role="listitem"
             >
@@ -246,7 +224,7 @@ export default function HeroCanvas() {
           ))}
         </div>
 
-        <div ref={panelRef} className="relative glass rounded-2xl p-5 lg:p-8 border border-white/10 mb-8 overflow-hidden hover-lift scroll-reveal" style={{ transitionDelay: "400ms" }}>
+        <div ref={panelRef} className="relative glass rounded-2xl p-5 lg:p-8 border border-white/10 mb-8 overflow-hidden hover-lift" style={{ transitionDelay: "400ms" }}>
           <div className="flex items-center justify-between mb-6 flex-wrap gap-3">
             <h2 className="text-lg lg:text-xl font-bold text-white animate-entrance-slide-left">Agentic GTM Lead Infrastructure</h2>
             <div className="flex items-center gap-2 text-[10px] font-mono">
@@ -260,8 +238,7 @@ export default function HeroCanvas() {
             {STAGES.map((stage, i) => (
               <div key={stage.id} className="flex-1 flex items-stretch gap-2">
                 <div
-                  ref={(el) => { sectionRefs.current[4 + i] = el; }}
-                  className="relative flex-1 rounded-2xl p-5 flex flex-col gap-2 min-w-0 overflow-hidden hover-lift scroll-reveal"
+                  className="relative flex-1 rounded-2xl p-5 flex flex-col gap-2 min-w-0 overflow-hidden hover-lift"
                   style={{ 
                     background: `linear-gradient(145deg, ${stage.colorSoft}, transparent)`, 
                     border: `1px solid ${stage.color}30`, 
@@ -296,7 +273,7 @@ export default function HeroCanvas() {
           </div>
         </div>
 
-        <div className="glass rounded-2xl p-6 lg:p-8 border border-white/10 mb-8 hover-lift scroll-reveal" style={{ transitionDelay: "900ms" }}>
+        <div className="glass rounded-2xl p-6 lg:p-8 border border-white/10 mb-8 hover-lift" style={{ transitionDelay: "900ms" }}>
           <div className="flex items-center justify-between mb-6">
             <h3 className="text-lg lg:text-xl font-bold text-white animate-entrance-slide-left">Pipeline Control Dashboard</h3>
           </div>
@@ -307,7 +284,7 @@ export default function HeroCanvas() {
           </div>
         </div>
 
-        <div className={`rounded-2xl p-4 lg:p-6 mb-8 flex items-start gap-3 overflow-hidden hover-lift scroll-reveal ${status.className}`} role="status" style={{ transitionDelay: "1000ms" }}>
+        <div className={`rounded-2xl p-4 lg:p-6 mb-8 flex items-start gap-3 overflow-hidden hover-lift ${status.className}`} role="status" style={{ transitionDelay: "1000ms" }}>
           <div className="flex-shrink-0 w-10 h-10 rounded-xl flex items-center justify-center text-xl bg-white/5 animate-entrance-scale-in">
             {status.icon}
           </div>

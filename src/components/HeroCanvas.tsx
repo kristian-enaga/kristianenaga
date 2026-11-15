@@ -339,19 +339,20 @@ export default function HeroCanvas() {
 
       <div className="relative z-10 w-full max-w-7xl mx-auto px-6 lg:px-12 py-8 flex flex-col flex-1">
         <div className="text-center mb-10" style={{ animation: "heroFadeUp 0.8s ease-out both" }}>
-          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full glass border-red-500/20 mb-6">
-            <span className="w-2 h-2 bg-red-400 rounded-full animate-pulse" />
-            <span className="text-sm font-medium text-red-400">Solving daily business operations</span>
+          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full glass border-mint/20 mb-6">
+            <span className="w-2 h-2 bg-mint rounded-full animate-pulse" />
+            <span className="text-sm font-medium text-mint">AI GTM Engineer — Self-Hosted Inbound Infrastructure</span>
           </div>
           <h1 id="hero-title" className="text-4xl sm:text-5xl lg:text-6xl xl:text-7xl font-bold tracking-tight leading-[1.02] text-white mb-6">
-            Automation That Fixes
+            I Build Autonomous Inbound
             <br />
-            <span className="text-gradient-mint">Daily Operations</span>
+            <span className="text-gradient-mint">Lead Engines</span>
             <br />
-            At The Source
+            That Run While You Sleep
           </h1>
           <p className="text-lg sm:text-xl text-muted max-w-3xl mx-auto leading-relaxed">
-            I build automation systems that eliminate manual data entry, reduce errors, free up staff time, and speed up repeat operations. Four production-grade GTM stages. Zero silent failures.
+            Self-hosted n8n + MCP agents on OCI. 4-stage pipeline: scrape → AI enrich → waterfall route → CRM sync. 
+            Zero silent failures. 1,200+ hrs saved/yr. Deployed, monitored, owned.
           </p>
         </div>
 

@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { Menu, X, Zap, ChevronRight, MessageSquare, ArrowRight, Briefcase, Sparkles, Calendar } from "lucide-react";
+import { Menu, X, Zap, ChevronRight, MessageSquare, Calendar } from "lucide-react";
 
 const navLinks = [
   { href: "#projects", label: "Projects" },
@@ -29,22 +29,22 @@ export default function Header() {
     >
       <div className="max-w-7xl mx-auto px-6 lg:px-12">
         <nav className="flex items-center justify-between h-16 lg:h-20" aria-label="Main navigation">
-<Link
-              href="#"
-              className="flex items-center gap-3 text-foreground font-bold tracking-tight text-xl lg:text-2xl whitespace-nowrap"
-              aria-label="Kristian Jay Eñaga - Home"
-              onClick={(e) => { e.preventDefault(); window.scrollTo({ top: 0, behavior: "smooth" }); setIsMobileMenuOpen(false); }}
-            >
-              <span className="relative flex items-center flex-shrink-0">
-                <Zap className="w-6 h-6 text-mint" aria-hidden="true" />
-                <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-mint rounded-full animate-pulse" aria-hidden="true" />
-              </span>
-              <span className="hidden sm:inline">KRISTIAN JAY EÑAGA</span>
-              <span className="hidden md:inline-flex items-center gap-1.5 text-muted text-xs font-medium uppercase tracking-wider ml-1 flex-shrink-0">
-                <span className="w-2 h-2 bg-mint rounded-full animate-pulse" aria-hidden="true" />
-                GTM Automation Engineer
-              </span>
-            </Link>
+          <Link
+            href="#"
+            className="flex items-center gap-3 text-foreground font-bold tracking-tight text-xl lg:text-2xl whitespace-nowrap"
+            aria-label="Kristian Jay Eñaga - Home"
+            onClick={(e) => { e.preventDefault(); window.scrollTo({ top: 0, behavior: "smooth" }); setIsMobileMenuOpen(false); }}
+          >
+            <span className="relative flex items-center flex-shrink-0">
+              <Zap className="w-6 h-6 text-mint" aria-hidden="true" />
+              <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-mint rounded-full animate-pulse" aria-hidden="true" />
+            </span>
+            <span className="hidden sm:inline">KRISTIAN JAY EÑAGA</span>
+            <span className="hidden md:inline-flex items-center gap-1.5 text-muted text-xs font-medium uppercase tracking-wider ml-1 flex-shrink-0">
+              <span className="w-2 h-2 bg-mint rounded-full animate-pulse" aria-hidden="true" />
+              GTM Automation Engineer
+            </span>
+          </Link>
 
           <div className="hidden lg:flex items-center gap-8">
             {navLinks.map((link) => (
@@ -59,28 +59,21 @@ export default function Header() {
                 {link.label}
               </a>
             ))}
-          </div>
-
-          <div className="hidden lg:flex items-center gap-3">
-            <a
-              href="https://wa.me/639510833623"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center gap-2 px-4 py-2 rounded-full glass border-white/10 text-sm font-medium text-muted hover:text-foreground hover:border-mint/30 transition-all duration-500 ease-out"
-            >
-              <MessageSquare className="w-4 h-4" aria-hidden="true" />
-              <span className="hidden sm:inline">WhatsApp</span>
-            </a>
+            {/* Small Book a Call link - minimal, at end of nav */}
             <a
               href="https://calendly.com/kchanchan2357/30min"
               target="_blank"
               rel="noopener noreferrer"
-              className="px-4 py-2 rounded-full font-medium text-sm bg-transparent text-foreground border border-white/10 hover:border-mint/50 hover:bg-white/5 transition-all duration-500 ease-in-out-cubic focus-ring whitespace-nowrap group"
+              className="flex items-center gap-1.5 text-xs font-medium text-muted hover:text-mint transition-colors duration-300 whitespace-nowrap"
               aria-label="Book a 15-min discovery call"
+              onClick={() => setIsMobileMenuOpen(false)}
             >
-              <Calendar className="w-4 h-4 mr-1.5 transition-transform duration-500 ease-out group-hover:-translate-y-1 group-hover:rotate-12" aria-hidden="true" />
+              <Calendar className="w-3.5 h-3.5" aria-hidden="true" />
               Book a Call
             </a>
+          </div>
+
+          <div className="hidden lg:flex items-center gap-3">
             <a
               href="#contact"
               className="btn-primary focus-ring whitespace-nowrap group"

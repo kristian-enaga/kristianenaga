@@ -5,27 +5,27 @@ import { useEffect, useRef, useState } from "react";
 interface Lantern {
   x: number;
   y: number;
-  baseY: number;
   radius: number;
   color: string;
   opacity: number;
-  phase: number; // 0 = fading in, 1 = floating, 2 = fading out
+  phase: "in" | "float" | "out";
   life: number;
   maxLife: number;
-  swayOffset: number;
-  swaySpeed: number;
+  swayPhase: number;
+  swayAmplitude: number;
   riseSpeed: number;
+  blur: number;
 }
 
 const LANTERN_COLORS = [
-  "rgba(251, 191, 36, 1)",   // warm amber
-  "rgba(249, 115, 22, 1)",   // soft coral
-  "rgba(52, 211, 153, 1)",   // emerald green
-  "rgba(168, 85, 247, 1)",   // muted purple
+  "rgba(251, 191, 36, 0.6)",   // warm amber
+  "rgba(249, 115, 22, 0.5)",   // soft coral
+  "rgba(52, 211, 153, 0.5)",   // emerald green
+  "rgba(168, 85, 247, 0.5)",   // muted purple
 ];
 
-const MAX_LANTERNS = 9;
-const SPAWN_INTERVAL_MS = 1800;
+const MAX_LANTERNS = 6;
+const SPAWN_INTERVAL_MS = 2500;
 
 export default function LanternBackground() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -66,7 +66,6 @@ export default function LanternBackground() {
     return () => window.removeEventListener("resize", resize);
   }, []);
 
-  // Spawn a single lantern
   const spawnLantern = () => {
     if (lanternsRef.current.length >= MAX_LANTERNS) return;
     if (!mountedRef.current) return;
@@ -76,27 +75,28 @@ export default function LanternBackground() {
     if (w === 0 || h === 0) return;
 
     const color = LANTERN_COLORS[Math.floor(Math.random() * LANTERN_COLORS.length)];
-    const startX = Math.random() * w;
-    const startY = h + 50; // start below viewport
-    const radius = 60 + Math.random() * 80; // 60-140px
-    const riseSpeed = 0.15 + Math.random() * 0.15; // pixels per frame
-    const swaySpeed = 0.002 + Math.random() * 0.003;
-    const swayOffset = Math.random() * Math.PI * 2;
-    const maxLife = (h + 150) / riseSpeed; // frames until off-screen
+    const startX = 0.15 * w + Math.random() * 0.7 * w; // avoid edges
+    const startY = h + 80;
+    const radius = 80 + Math.random() * 60; // 80-140px
+    const riseSpeed = 0.08 + Math.random() * 0.06;
+    const swayAmplitude = 15 + Math.random() * 25;
+    const swayPhase = Math.random() * Math.PI * 2;
+    const blur = 40 + Math.random() * 40;
+    const maxLife = (h + 200) / riseSpeed;
 
     lanternsRef.current.push({
       x: startX,
       y: startY,
-      baseY: startY,
       radius,
       color,
       opacity: 0,
-      phase: 0,
+      phase: "in",
       life: 0,
       maxLife,
-      swayOffset,
-      swaySpeed,
+      swayPhase,
+      swayAmplitude,
       riseSpeed,
+      blur,
     });
   };
 
@@ -118,10 +118,55 @@ export default function LanternBackground() {
 
     if (prefersReducedMotionRef.current) return;
 
-    // Spawn timer
     spawnTimerRef.current = window.setInterval(spawnLantern, SPAWN_INTERVAL_MS);
-    // Initial spawn after short delay
-    setTimeout(spawnLantern, 800);
+    setTimeout(spawnLantern, 1200);
+
+    // Draw static dark tech background once
+    const drawBaseBackground = () => {
+      const w = widthRef.current;
+      const h = heightRef.current;
+      
+      // Deep dark base
+      const baseGrad = ctx.createLinearGradient(0, 0, 0, h);
+      baseGrad.addColorStop(0, "#020617");
+      baseGrad.addColorStop(0.5, "#050a1a");
+      baseGrad.addColorStop(1, "#020617");
+      ctx.fillStyle = baseGrad;
+      ctx.fillRect(0, 0, w, h);
+
+      // Subtle grid pattern (tech aesthetic)
+      ctx.strokeStyle = "rgba(148, 163, 184, 0.02)";
+      ctx.lineWidth = 1;
+      const gridSize = 60;
+      for (let x = 0; x <= w; x += gridSize) {
+        ctx.beginPath();
+        ctx.moveTo(x, 0);
+        ctx.lineTo(x, h);
+        ctx.stroke();
+      }
+      for (let y = 0; y <= h; y += gridSize) {
+        ctx.beginPath();
+        ctx.moveTo(0, y);
+        ctx.lineTo(w, y);
+        ctx.stroke();
+      }
+
+      // Corner gradient glows (ambient)
+      const cornerGlows = [
+        { x: w * 0.1, y: h * 0.15, color: "rgba(168, 85, 247, 0.08)", r: Math.max(w, h) * 0.6 },
+        { x: w * 0.85, y: h * 0.75, color: "rgba(52, 211, 153, 0.06)", r: Math.max(w, h) * 0.5 },
+        { x: w * 0.5, y: h * 0.95, color: "rgba(251, 191, 36, 0.05)", r: Math.max(w, h) * 0.4 },
+      ];
+      cornerGlows.forEach(({ x, y, color, r }) => {
+        const grad = ctx.createRadialGradient(x, y, 0, x, y, r);
+        grad.addColorStop(0, color);
+        grad.addColorStop(1, "transparent");
+        ctx.fillStyle = grad;
+        ctx.fillRect(0, 0, w, h);
+      });
+    };
+
+    drawBaseBackground();
 
     const animate = () => {
       if (!mountedRef.current) return;
@@ -130,11 +175,10 @@ export default function LanternBackground() {
       const h = heightRef.current;
       timeRef.current += 16;
 
-      // Clear with dark background (matches site bg)
-      ctx.fillStyle = "rgba(2, 6, 23, 1)";
-      ctx.fillRect(0, 0, w, h);
+      // Redraw base each frame (cheap, keeps grid stable)
+      drawBaseBackground();
 
-      // Additive blending for soft glow
+      // Additive blending for lanterns
       ctx.globalCompositeOperation = "lighter";
 
       const aliveLanterns: Lantern[] = [];
@@ -144,72 +188,73 @@ export default function LanternBackground() {
         const progress = lantern.life / lantern.maxLife;
 
         // Phase transitions
-        if (lantern.phase === 0) {
-          // Fade in (first 15% of life)
-          if (progress < 0.15) {
-            lantern.opacity = (progress / 0.15) * (0.25 + Math.random() * 0.15);
+        if (lantern.phase === "in") {
+          if (progress < 0.12) {
+            lantern.opacity = (progress / 0.12) * 0.28;
           } else {
-            lantern.phase = 1;
-            lantern.opacity = 0.25 + Math.random() * 0.15;
+            lantern.phase = "float";
+            lantern.opacity = 0.28;
           }
-        } else if (lantern.phase === 1) {
-          // Floating - gentle pulse
-          const pulse = Math.sin(timeRef.current * 0.0008 + lantern.swayOffset) * 0.05;
-          lantern.opacity = Math.max(0.15, Math.min(0.4, 0.3 + pulse));
-          
-          if (progress > 0.85) {
-            lantern.phase = 2;
+        } else if (lantern.phase === "float") {
+          if (progress > 0.82) {
+            lantern.phase = "out";
+          } else {
+            // Gentle breathing pulse
+            const pulse = Math.sin(timeRef.current * 0.0006 + lantern.swayPhase) * 0.03;
+            lantern.opacity = Math.max(0.18, Math.min(0.32, 0.25 + pulse));
           }
         } else {
-          // Fade out (last 15%)
-          const fadeProgress = (progress - 0.85) / 0.15;
-          lantern.opacity = Math.max(0, (1 - fadeProgress) * 0.3);
+          const fadeProgress = (progress - 0.82) / 0.18;
+          lantern.opacity = Math.max(0, (1 - fadeProgress) * 0.28);
         }
 
-        // Movement: rise + sway
+        // Movement: rise + smooth horizontal sway
         lantern.y -= lantern.riseSpeed;
-        lantern.x += Math.sin(timeRef.current * lantern.swaySpeed + lantern.swayOffset) * 0.3;
+        lantern.x += Math.sin(timeRef.current * 0.0008 + lantern.swayPhase) * lantern.swayAmplitude * 0.008;
 
-        // Draw lantern if visible
-        if (lantern.opacity > 0.02 && lantern.y > -lantern.radius) {
-          // Soft radial gradient glow
+        // Draw if visible and on screen
+        if (lantern.opacity > 0.02 && lantern.y > -lantern.radius && lantern.y < h + lantern.radius) {
+          ctx.filter = `blur(${lantern.blur}px)`;
+          ctx.globalAlpha = 1;
+
+          // Main glow - large soft orb
           const grad = ctx.createRadialGradient(
             lantern.x, lantern.y, 0,
             lantern.x, lantern.y, lantern.radius
           );
-          const baseColor = lantern.color.replace("1)", `${lantern.opacity})`);
-          const midColor = lantern.color.replace("1)", `${lantern.opacity * 0.4})`);
-          const endColor = lantern.color.replace("1)", "0)");
-
-          grad.addColorStop(0, baseColor);
-          grad.addColorStop(0.4, midColor);
-          grad.addColorStop(0.7, midColor);
-          grad.addColorStop(1, endColor);
+          const c = lantern.color.replace(/[\d.]+\)$/, `${lantern.opacity})`);
+          const cMid = lantern.color.replace(/[\d.]+\)$/, `${lantern.opacity * 0.35})`);
+          const cEnd = lantern.color.replace(/[\d.]+\)$/, `0)`);
+          grad.addColorStop(0, c);
+          grad.addColorStop(0.35, cMid);
+          grad.addColorStop(0.65, cMid);
+          grad.addColorStop(1, cEnd);
 
           ctx.fillStyle = grad;
           ctx.beginPath();
           ctx.arc(lantern.x, lantern.y, lantern.radius, 0, Math.PI * 2);
           ctx.fill();
 
-          // Subtle core highlight
+          // Subtle core
           const coreGrad = ctx.createRadialGradient(
             lantern.x, lantern.y, 0,
-            lantern.x, lantern.y, lantern.radius * 0.25
+            lantern.x, lantern.y, lantern.radius * 0.18
           );
-          const coreColor = lantern.color.replace("1)", `${Math.min(0.5, lantern.opacity * 1.5)})`);
-          coreGrad.addColorStop(0, coreColor);
-          coreGrad.addColorStop(1, lantern.color.replace("1)", "0)"));
+          const coreC = lantern.color.replace(/[\d.]+\)$/, `${Math.min(0.45, lantern.opacity * 1.6)})`);
+          coreGrad.addColorStop(0, coreC);
+          coreGrad.addColorStop(1, cEnd);
           ctx.fillStyle = coreGrad;
           ctx.beginPath();
-          ctx.arc(lantern.x, lantern.y, lantern.radius * 0.25, 0, Math.PI * 2);
+          ctx.arc(lantern.x, lantern.y, lantern.radius * 0.18, 0, Math.PI * 2);
           ctx.fill();
+
+          ctx.filter = "none";
 
           aliveLanterns.push(lantern);
         }
       });
 
       lanternsRef.current = aliveLanterns;
-
       ctx.globalCompositeOperation = "source-over";
 
       animationRef.current = requestAnimationFrame(animate);
@@ -230,7 +275,6 @@ export default function LanternBackground() {
       ref={canvasRef}
       className="fixed inset-0 pointer-events-none -z-10 select-none"
       aria-hidden="true"
-      style={{ willChange: "transform" }}
     />
   );
 }

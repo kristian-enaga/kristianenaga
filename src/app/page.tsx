@@ -9,6 +9,7 @@ import SkillsTagCloud from "@/components/SkillsTagCloud";
 import Contact from "@/components/Contact";
 import Footer from "@/components/Footer";
 import LanternBackground from "@/components/LanternBackground";
+import CursorGlow from "@/components/CursorGlow";
 import EmailCaptureModal from "@/components/EmailCaptureModal";
 import BottomSheet from "@/components/BottomSheet";
 
@@ -27,6 +28,7 @@ export default function Home() {
         <Contact />
       </main>
       <LanternBackground />
+      <CursorGlow />
       <EmailCaptureModal />
       <BottomSheet />
       <Footer />

@@ -158,35 +158,44 @@ export default function HeroCanvas() {
       </div>
 
       <div className="relative z-10 w-full max-w-7xl mx-auto px-6 lg:px-12 py-8 flex flex-col flex-1">
-        <div className="text-center mb-10 animate-entrance-fade-up" style={{ animationDelay: "0ms" }}>
+        <div className="text-center mb-10 animate-hero-entrance-fade-up" style={{ animationDelay: "0ms" }}>
           <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full glass border-mint/20 mb-6 animate-entrance-scale-in" style={{ animationDelay: "60ms" }}>
             <span className="w-2 h-2 bg-mint rounded-full animate-pulse" />
             <span className="text-sm font-medium text-mint">AI GTM Engineer — Custom Sales & Ops Systems</span>
           </div>
-          <h1 id="hero-title" className="text-4xl sm:text-5xl lg:text-6xl xl:text-7xl font-bold tracking-tight leading-[1.02] text-white mb-6 text-reveal">
-            <span style={{ animationDelay: "120ms" }}>I Replace Manual Sales & Ops Work</span>
+          <h1 id="hero-title" className="text-4xl sm:text-5xl lg:text-6xl xl:text-7xl font-bold tracking-tight leading-[1.02] text-white mb-6">
+            <span className="animate-hero-entrance-fade-up" style={{ animationDelay: "120ms" }}>I Replace Manual Sales & Ops Work</span>
             <br />
-            <span className="text-gradient-mint" style={{ animationDelay: "180ms" }}>With Custom AI Systems You Own</span>
+            <span className="text-gradient-mint animate-gradient-shimmer animate-text-breathe-glow" style={{ animationDelay: "180ms" }}>With Custom AI Systems You Own</span>
           </h1>
-          <div className="text-lg sm:text-xl text-muted max-w-3xl mx-auto leading-relaxed whitespace-pre-line text-left md:text-center animate-entrance-fade-up" style={{ animationDelay: "240ms" }}>
-            <div className="flex flex-col items-center md:items-start gap-2 mb-4">
-              <span className="flex items-center gap-2 text-white/90 animate-entrance-slide-right" style={{ animationDelay: "300ms" }}>
-                <span className="w-2 h-2 rounded-full bg-amber-400 animate-entrance-scale-in" style={{ animationDelay: "300ms" }} />
-                Inbound: Clean, score, and route incoming leads to your CRM and Slack in under 30 seconds.
-              </span>
-              <span className="flex items-center gap-2 text-white/90 animate-entrance-slide-right" style={{ animationDelay: "360ms" }}>
-                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-entrance-scale-in" style={{ animationDelay: "360ms" }} />
-                Outbound: Turn raw company data into verified, outreach-ready prospects in seconds instead of hours.
-              </span>
-              <span className="flex items-center gap-2 text-white/90 animate-entrance-slide-right" style={{ animationDelay: "420ms" }}>
-                <span className="w-2 h-2 rounded-full bg-violet-400 animate-entrance-scale-in" style={{ animationDelay: "420ms" }} />
-                Infrastructure: Self-hosted on your cloud (n8n, Supabase, Docker) with instant Slack & Telegram error alerts.
-              </span>
+          <div className="max-w-2xl mx-auto text-left animate-hero-entrance-fade-up" style={{ animationDelay: "240ms" }}>
+            <div className="flex flex-col gap-4">
+              <div className="flex items-start gap-3">
+                <span className="w-2.5 h-2.5 rounded-full bg-amber-400 mt-1.5 shrink-0 animate-dot-sparkle animate-dot-sparkle-delay-1" />
+                <div>
+                  <span className="font-bold text-white">Inbound:</span>
+                  <span className="text-white/90 ml-1">Clean, score, and route incoming leads to your CRM and Slack in under 30 seconds.</span>
+                </div>
+              </div>
+              <div className="flex items-start gap-3">
+                <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 mt-1.5 shrink-0 animate-dot-sparkle animate-dot-sparkle-delay-2" />
+                <div>
+                  <span className="font-bold text-white">Outbound:</span>
+                  <span className="text-white/90 ml-1">Turn raw company data into verified, outreach-ready prospects in seconds instead of hours.</span>
+                </div>
+              </div>
+              <div className="flex items-start gap-3">
+                <span className="w-2.5 h-2.5 rounded-full bg-violet-400 mt-1.5 shrink-0 animate-dot-sparkle animate-dot-sparkle-delay-3" />
+                <div>
+                  <span className="font-bold text-white">Infrastructure:</span>
+                  <span className="text-white/90 ml-1">Self-hosted on your cloud (n8n, Supabase, Docker) with instant Slack & Telegram error alerts.</span>
+                </div>
+              </div>
             </div>
-            <p className="text-sm text-muted/60 mt-2 max-w-xl mx-auto animate-entrance-fade-up" style={{ animationDelay: "480ms" }}>
+            <p className="text-sm text-muted/60 mt-4 max-w-xl mx-auto animate-hero-entrance-fade-up" style={{ animationDelay: "480ms" }}>
               *Self-hosted on your cloud — you own the data, the infra, the uptime. No vendor lock-in.
             </p>
-            <div className="flex items-center justify-center gap-6 mt-4 text-sm animate-entrance-fade-up" style={{ animationDelay: "540ms" }}>
+            <div className="flex items-center justify-center gap-6 mt-4 text-sm animate-hero-entrance-fade-up" style={{ animationDelay: "540ms" }}>
               <span className="flex items-center gap-1.5 text-white/80 hover-lift" style={{ animationDelay: "540ms" }}>
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
                 Instant Slack & Telegram error alerts
@@ -195,7 +204,7 @@ export default function HeroCanvas() {
                 <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
                 1,200+ hrs saved/yr
               </span>
-              <span className="flex items-center gap-1.5 text-white/80 hover-lift" style={{ animationDelay: "660ms" }}>
+              <span className="flex items-center justify-center gap-1.5 text-white/80 hover-lift" style={{ animationDelay: "660ms" }}>
                 <span className="w-1.5 h-1.5 rounded-full bg-violet-400" />
                 Deployed, monitored, owned
               </span>

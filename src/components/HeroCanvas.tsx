@@ -158,17 +158,17 @@ export default function HeroCanvas() {
       </div>
 
       <div className="relative z-10 w-full max-w-7xl mx-auto px-6 lg:px-12 py-8 flex flex-col flex-1">
-        <div className="text-center mb-10 animate-hero-entrance-fade-up" style={{ animationDelay: "0ms" }}>
+        <div className="text-center mb-10 animate-hero-entrance-fade-up max-w-4xl mx-auto" style={{ animationDelay: "0ms" }}>
           <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full glass border-mint/20 mb-6 animate-entrance-scale-in" style={{ animationDelay: "60ms" }}>
             <span className="w-2 h-2 bg-mint rounded-full animate-pulse" />
             <span className="text-sm font-medium text-mint">AI GTM Engineer — Custom Sales & Ops Systems</span>
           </div>
-          <h1 id="hero-title" className="text-4xl sm:text-5xl lg:text-6xl xl:text-7xl font-bold tracking-tight leading-[1.02] text-white mb-6">
-            <span className="animate-hero-entrance-fade-up" style={{ animationDelay: "120ms" }}>I Replace Manual Sales & Ops Work</span>
+          <h1 id="hero-title" className="text-4xl sm:text-5xl lg:text-6xl xl:text-7xl font-bold tracking-tight leading-[1.02] text-white mb-6 max-w-[90vw] mx-auto">
+            <span className="animate-hero-entrance-fade-up" style={{ animationDelay: "100ms", animationTimingFunction: "cubic-bezier(0.16, 1, 0.3, 1)" }}>I Replace Manual Sales & Ops Work</span>
             <br />
-            <span className="text-gradient-mint animate-gradient-shimmer animate-text-breathe-glow" style={{ animationDelay: "180ms" }}>With Custom AI Systems You Own</span>
+            <span className="text-gradient-mint animate-gradient-shimmer animate-text-breathe-glow" style={{ animationDelay: "250ms" }}>With Custom AI Systems You Own</span>
           </h1>
-          <div className="max-w-2xl mx-auto text-left animate-hero-entrance-fade-up" style={{ animationDelay: "240ms" }}>
+          <div className="max-w-2xl mx-auto text-left animate-hero-entrance-fade-up" style={{ animationDelay: "400ms" }}>
             <div className="flex flex-col gap-4">
               <div className="flex items-start gap-3">
                 <span className="w-2.5 h-2.5 rounded-full bg-amber-400 mt-1.5 shrink-0 animate-dot-sparkle animate-dot-sparkle-delay-1" />
@@ -188,17 +188,17 @@ export default function HeroCanvas() {
                 <span className="w-2.5 h-2.5 rounded-full bg-violet-400 mt-1.5 shrink-0 animate-dot-sparkle animate-dot-sparkle-delay-3" />
                 <div>
                   <span className="font-bold text-white">Infrastructure:</span>
-                  <span className="text-white/90 ml-1">Self-hosted on your cloud (n8n, Supabase, Docker) with instant Slack & Telegram error alerts.</span>
+                  <span className="text-white/90 ml-1">Production-grade n8n, Supabase & Docker pipelines with instant Slack & Telegram error alerts.</span>
                 </div>
               </div>
             </div>
-            <p className="text-sm text-muted/60 mt-4 max-w-xl mx-auto animate-hero-entrance-fade-up" style={{ animationDelay: "480ms" }}>
+            <p className="text-sm text-muted/60 mt-4 max-w-xl mx-auto animate-hero-entrance-fade-up" style={{ animationDelay: "500ms" }}>
               *Self-hosted on your cloud — you own the data, the infra, the uptime. No vendor lock-in.
             </p>
-            <div className="flex items-center justify-center gap-6 mt-4 text-sm animate-hero-entrance-fade-up" style={{ animationDelay: "540ms" }}>
+            <div className="flex items-center justify-center gap-6 mt-4 text-sm animate-hero-entrance-fade-up" style={{ animationDelay: "550ms" }}>
               <span className="flex items-center gap-1.5 text-white/80 hover-lift" style={{ animationDelay: "540ms" }}>
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
-                Instant Slack & Telegram error alerts
+                US timezone overlap & async delivery
               </span>
               <span className="flex items-center gap-1.5 text-white/80 hover-lift" style={{ animationDelay: "600ms" }}>
                 <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
@@ -237,7 +237,10 @@ export default function HeroCanvas() {
           <div className="flex items-center justify-between mb-6 flex-wrap gap-3">
             <h2 className="text-lg lg:text-xl font-bold text-white animate-entrance-slide-left">Agentic GTM Lead Infrastructure</h2>
             <div className="flex items-center gap-2 text-[10px] font-mono">
-              <span className="px-2 py-1 rounded-full bg-red-500/15 text-red-400 animate-pulse animate-entrance-scale-in" style={{ animationDelay: "500ms" }}>LIVE</span>
+              <span className="flex items-center gap-1 px-2 py-1 rounded-full bg-red-500/15 text-red-400 animate-pulse animate-entrance-scale-in" style={{ animationDelay: "500ms" }}>
+              <span className="w-1 h-1 rounded-full bg-emerald-400 animate-live-dot" />
+              LIVE
+            </span>
               <span className="px-2 py-1 rounded-full bg-emerald-500/15 text-emerald-400 animate-entrance-scale-in" style={{ animationDelay: "560ms" }}>REACTIVE</span>
               <span className="px-2 py-1 rounded-full bg-amber-500/15 text-amber-400 animate-entrance-scale-in" style={{ animationDelay: "620ms" }}>4-STAGE</span>
             </div>
@@ -247,11 +250,12 @@ export default function HeroCanvas() {
             {STAGES.map((stage, i) => (
               <div key={stage.id} className="flex-1 flex items-stretch gap-2">
                 <div
-                  className="relative flex-1 rounded-2xl p-5 flex flex-col gap-2 min-w-0 overflow-hidden hover-lift stage-card"
+                  className="relative flex-1 rounded-2xl p-5 flex flex-col gap-2 min-w-0 overflow-hidden hover-lift stage-card animate-stage-active"
                   style={{ 
                     background: `linear-gradient(145deg, ${stage.colorSoft}, transparent)`, 
                     border: `1px solid ${stage.color}30`, 
                     boxShadow: `0 0 24px ${stage.color}10, inset 0 1px 0 rgba(255,255,255,0.05)`,
+                    animationDelay: `${i * 0.9}s`,
                     transitionDelay: `${500 + i * 100}ms`
                   }}
                 >
@@ -273,8 +277,9 @@ export default function HeroCanvas() {
                   </div>
                 </div>
                 {i < STAGES.length - 1 && (
-                  <div className="hidden md:flex items-center justify-center shrink-0 w-6 animate-entrance-fade-up" style={{ animationDelay: `${620 + i * 100}ms` }}>
+                  <div className="relative hidden md:flex items-center justify-center shrink-0 w-6 animate-entrance-fade-up" style={{ animationDelay: `${620 + i * 100}ms` }}>
                     <div className="w-full h-0.5 rounded-full animate-shimmer-sweep" style={{ background: `linear-gradient(90deg, ${stage.color}60, ${STAGES[i + 1].color}60)`, boxShadow: `0 0 8px ${stage.color}50`, backgroundSize: "200% 100%" }} />
+                    <div className="absolute left-0 top-1/2 -translate-y-1/2 w-2 h-2 rounded-full animate-pipeline-dot animate-pipeline-dot-delay-${i}" style={{ background: `linear-gradient(90deg, ${stage.color}, ${STAGES[i + 1].color})`, boxShadow: `0 0 8px ${stage.color}` }} />
                   </div>
                 )}
               </div>

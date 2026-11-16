@@ -161,26 +161,26 @@ export default function HeroCanvas() {
         <div className="text-center mb-10 animate-entrance-fade-up" style={{ animationDelay: "0ms" }}>
           <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full glass border-mint/20 mb-6 animate-entrance-scale-in" style={{ animationDelay: "60ms" }}>
             <span className="w-2 h-2 bg-mint rounded-full animate-pulse" />
-            <span className="text-sm font-medium text-mint">AI GTM Engineer — Self-Hosted Revenue Infrastructure</span>
+            <span className="text-sm font-medium text-mint">AI GTM Engineer — Custom Sales & Ops Systems</span>
           </div>
           <h1 id="hero-title" className="text-4xl sm:text-5xl lg:text-6xl xl:text-7xl font-bold tracking-tight leading-[1.02] text-white mb-6 text-reveal">
-            <span style={{ animationDelay: "120ms" }}>I Build Autonomous Lead Engines</span>
+            <span style={{ animationDelay: "120ms" }}>I Replace Manual Sales & Ops Work</span>
             <br />
-            <span className="text-gradient-mint" style={{ animationDelay: "180ms" }}>That Run While You Sleep</span>
+            <span className="text-gradient-mint" style={{ animationDelay: "180ms" }}>With Custom AI Systems You Own</span>
           </h1>
           <div className="text-lg sm:text-xl text-muted max-w-3xl mx-auto leading-relaxed whitespace-pre-line text-left md:text-center animate-entrance-fade-up" style={{ animationDelay: "240ms" }}>
             <div className="flex flex-col items-center md:items-start gap-2 mb-4">
               <span className="flex items-center gap-2 text-white/90 animate-entrance-slide-right" style={{ animationDelay: "300ms" }}>
                 <span className="w-2 h-2 rounded-full bg-amber-400 animate-entrance-scale-in" style={{ animationDelay: "300ms" }} />
-                Inbound: scrape → AI enrich → waterfall route → CRM sync
+                Inbound: Clean, score, and route incoming leads to your CRM and Slack in under 30 seconds.
               </span>
               <span className="flex items-center gap-2 text-white/90 animate-entrance-slide-right" style={{ animationDelay: "360ms" }}>
                 <span className="w-2 h-2 rounded-full bg-emerald-400 animate-entrance-scale-in" style={{ animationDelay: "360ms" }} />
-                Outbound: signal-based sequences, deliverability infra, reply handling
+                Outbound: Turn raw company data into verified, outreach-ready prospects in seconds instead of hours.
               </span>
               <span className="flex items-center gap-2 text-white/90 animate-entrance-slide-right" style={{ animationDelay: "420ms" }}>
                 <span className="w-2 h-2 rounded-full bg-violet-400 animate-entrance-scale-in" style={{ animationDelay: "420ms" }} />
-                Infra: OCI Ubuntu, Docker, Caddy, Tailscale, MCP servers — 99.9% uptime*
+                Infrastructure: Self-hosted on your cloud (n8n, Supabase, Docker) with instant Slack & Telegram error alerts.
               </span>
             </div>
             <p className="text-sm text-muted/60 mt-2 max-w-xl mx-auto animate-entrance-fade-up" style={{ animationDelay: "480ms" }}>
@@ -189,7 +189,7 @@ export default function HeroCanvas() {
             <div className="flex items-center justify-center gap-6 mt-4 text-sm animate-entrance-fade-up" style={{ animationDelay: "540ms" }}>
               <span className="flex items-center gap-1.5 text-white/80 hover-lift" style={{ animationDelay: "540ms" }}>
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
-                Zero silent failures
+                Instant Slack & Telegram error alerts
               </span>
               <span className="flex items-center gap-1.5 text-white/80 hover-lift" style={{ animationDelay: "600ms" }}>
                 <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />

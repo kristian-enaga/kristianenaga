@@ -76,7 +76,7 @@ export default function Header() {
           <div className="hidden lg:flex items-center gap-3">
             <a
               href="#contact"
-              className="btn-primary focus-ring whitespace-nowrap group"
+              className="btn-primary focus-ring whitespace-nowrap group px-8 py-3"
               onClick={(e) => { e.preventDefault(); document.querySelector('#contact')?.scrollIntoView({ behavior: 'smooth' }); }}
             >
               Let's Work Together

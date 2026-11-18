@@ -610,6 +610,32 @@ body::before {
   opacity: 1;
 }
 
+/* CTA Primary Button - Modern Tech Startup Green Glow */
+.cta-primary-glow {
+  position: relative;
+}
+.cta-primary-glow::before {
+  content: "";
+  position: absolute;
+  inset: -3px;
+  border-radius: inherit;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  background: linear-gradient(135deg, #10b981, #059669, #34d399);
+  z-index: -1;
+  filter: blur(8px);
+}
+.cta-primary-glow:hover::before {
+  opacity: 1;
+}
+.cta-primary-glow:hover {
+  box-shadow: 
+    0 0 0 2px rgba(16, 185, 129, 0.6),
+    0 0 20px rgba(16, 185, 129, 0.5),
+    0 0 40px rgba(52, 211, 153, 0.4),
+    0 0 80px rgba(16, 185, 129, 0.2);
+}
+
 /* No text/icon glow on hover - clean text */
 .hover-lift:hover .font-mono.text-white,
 .hover-lift:hover .font-bold.text-white,

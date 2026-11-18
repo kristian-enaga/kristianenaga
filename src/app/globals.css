@@ -610,30 +610,70 @@ body::before {
   opacity: 1;
 }
 
-/* CTA Primary Button - Modern Tech Startup Mint Glow */
+/* CTA Primary Button - Natural Modern Tech Startup Glow */
 .cta-primary-glow {
   position: relative;
 }
 .cta-primary-glow::before {
   content: "";
   position: absolute;
-  inset: -3px;
+  inset: -2px;
   border-radius: inherit;
   opacity: 0;
-  transition: opacity 0.3s ease;
+  transition: opacity 0.4s ease;
   background: linear-gradient(135deg, var(--accent-mint), var(--accent-cyan));
   z-index: -1;
-  filter: blur(12px);
+  filter: blur(16px);
 }
-.cta-primary-glow:hover::before {
+.cta-primary-glow::after {
+  content: "";
+  position: absolute;
+  inset: -6px;
+  border-radius: inherit;
+  opacity: 0;
+  transition: opacity 0.5s ease;
+  background: linear-gradient(135deg, var(--accent-mint), var(--accent-cyan));
+  z-index: -2;
+  filter: blur(32px);
+}
+.cta-primary-glow:hover::before,
+.cta-primary-glow:hover::after {
   opacity: 1;
 }
 .cta-primary-glow:hover {
   box-shadow: 
-    0 0 0 2px rgba(0, 255, 135, 0.8),
-    0 0 32px rgba(0, 255, 135, 0.6),
-    0 0 64px rgba(6, 182, 212, 0.5),
-    0 0 128px rgba(0, 255, 135, 0.25);
+    /* Core ring */
+    0 0 0 1px rgba(0, 255, 135, 0.9),
+    /* Inner glow */
+    0 0 16px rgba(0, 255, 135, 0.4),
+    /* Mid halo */
+    0 0 32px rgba(6, 182, 212, 0.25),
+    /* Outer ambient */
+    0 0 64px rgba(0, 255, 135, 0.12);
+  animation: cta-breathe 3s ease-in-out infinite;
+}
+@keyframes cta-breathe {
+  0%, 100% { 
+    box-shadow: 
+      0 0 0 1px rgba(0, 255, 135, 0.9),
+      0 0 16px rgba(0, 255, 135, 0.4),
+      0 0 32px rgba(6, 182, 212, 0.25),
+      0 0 64px rgba(0, 255, 135, 0.12);
+  }
+  50% { 
+    box-shadow: 
+      0 0 0 2px rgba(0, 255, 135, 1),
+      0 0 24px rgba(0, 255, 135, 0.55),
+      0 0 48px rgba(6, 182, 212, 0.35),
+      0 0 96px rgba(0, 255, 135, 0.18);
+  }
+}
+
+/* Respect reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .cta-primary-glow:hover {
+    animation: none;
+  }
 }
 
 /* No text/icon glow on hover - clean text */

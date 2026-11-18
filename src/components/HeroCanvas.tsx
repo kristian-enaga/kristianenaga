@@ -234,36 +234,43 @@ export default function HeroCanvas() {
         </div>
 
         <div ref={panelRef} className="relative glass rounded-2xl p-5 lg:p-8 border border-white/10 mb-8 overflow-hidden hover-lift" style={{ transitionDelay: "400ms" }}>
-          <div className="flex items-center justify-between mb-6 flex-wrap gap-3">
-            <h2 className="text-lg lg:text-xl font-bold text-white animate-entrance-slide-left">Agentic GTM Lead Infrastructure</h2>
+          {/* Ambient panel glow */}
+          <div className="absolute inset-0 -z-10 opacity-30" style={{ background: `radial-gradient(circle at 20% 30%, ${STAGES[0].color}25 0%, transparent 50%)` }} />
+          <div className="absolute inset-0 -z-10 opacity-20" style={{ background: `radial-gradient(circle at 80% 70%, ${STAGES[3].color}25 0%, transparent 50%)` }} />
+          
+          <div className="flex items-center justify-between mb-8 flex-wrap gap-3">
+            <h2 className="text-lg lg:text-xl font-bold text-white tracking-tight animate-entrance-slide-left">Agentic GTM Lead Infrastructure</h2>
             <div className="flex items-center gap-2 text-[10px] font-mono">
               <span className="flex items-center gap-1 px-2 py-1 rounded-full bg-red-500/15 text-red-400 animate-pulse animate-entrance-scale-in" style={{ animationDelay: "500ms" }}>
-              <span className="w-1 h-1 rounded-full bg-emerald-400 animate-live-dot" />
-              LIVE
-            </span>
+                <span className="w-1 h-1 rounded-full bg-emerald-400 animate-live-dot" />
+                LIVE
+              </span>
               <span className="px-2 py-1 rounded-full bg-emerald-500/15 text-emerald-400 animate-entrance-scale-in" style={{ animationDelay: "560ms" }}>REACTIVE</span>
               <span className="px-2 py-1 rounded-full bg-amber-500/15 text-amber-400 animate-entrance-scale-in" style={{ animationDelay: "620ms" }}>4-STAGE</span>
             </div>
           </div>
 
-          <div className="flex flex-col md:flex-row items-stretch gap-3 md:gap-2">
+          <div className="relative flex flex-col md:flex-row items-stretch gap-3 md:gap-2">
             {STAGES.map((stage, i) => (
               <div key={stage.id} className="flex-1 flex items-stretch gap-2">
                 <div
                   className="relative flex-1 rounded-2xl p-5 flex flex-col gap-2 min-w-0 overflow-hidden hover-lift stage-card animate-stage-active"
                   style={{ 
-                    background: `linear-gradient(145deg, ${stage.colorSoft}, transparent)`, 
-                    border: `1px solid ${stage.color}30`, 
-                    boxShadow: `0 0 24px ${stage.color}10, inset 0 1px 0 rgba(255,255,255,0.05)`,
+                    background: `linear-gradient(145deg, ${stage.colorSoft}, rgba(255,255,255,0.02))`, 
+                    border: `1px solid ${stage.color}20`,
+                    boxShadow: `0 0 20px ${stage.color}08, inset 0 1px 0 rgba(255,255,255,0.06)`,
                     animationDelay: `${i * 0.9}s`,
                     transitionDelay: `${500 + i * 100}ms`
                   }}
                 >
                   <div className="flex items-start justify-between gap-2">
-                    <div className="w-10 h-10 rounded-xl flex items-center justify-center text-lg shrink-0 animate-entrance-scale-in" style={{ background: `${stage.color}20`, border: `1px solid ${stage.color}40`, color: stage.color, animationDelay: `${520 + i * 100}ms` }}>
-                      {stage.icon}
+                    <div className="relative w-10 h-10 rounded-2xl flex items-center justify-center shrink-0 animate-entrance-scale-in" style={{ animationDelay: `${520 + i * 100}ms` }}>
+                      <div className="absolute inset-0 rounded-2xl" style={{ background: `${stage.color}10`, border: `1px solid ${stage.color}40`, opacity: 0.5 }} />
+                      <div className="relative z-10 w-6 h-6 rounded-lg flex items-center justify-center" style={{ background: stage.color, boxShadow: `0 0 12px ${stage.color}60` }}>
+                        <span style={{ color: '#020617' }}>{stage.icon}</span>
+                      </div>
                     </div>
-                    <span className="text-[9px] font-mono font-bold tracking-wider px-1.5 py-0.5 rounded text-white/80 animate-entrance-slide-right" style={{ background: `${stage.color}25`, animationDelay: `${540 + i * 100}ms` }}>
+                    <span className="text-[9px] font-mono font-bold tracking-wider px-1.5 py-0.5 rounded text-white/90 animate-entrance-slide-right" style={{ background: `${stage.color}20`, border: `1px solid ${stage.color}40`, animationDelay: `${540 + i * 100}ms` }}>
                       {stage.badge}
                     </span>
                   </div>
@@ -277,9 +284,9 @@ export default function HeroCanvas() {
                   </div>
                 </div>
                 {i < STAGES.length - 1 && (
-                  <div className="relative hidden md:flex items-center justify-center shrink-0 w-6 animate-entrance-fade-up" style={{ animationDelay: `${620 + i * 100}ms` }}>
-                    <div className="w-full h-0.5 rounded-full animate-shimmer-sweep" style={{ background: `linear-gradient(90deg, ${stage.color}60, ${STAGES[i + 1].color}60)`, boxShadow: `0 0 8px ${stage.color}50`, backgroundSize: "200% 100%" }} />
-                    <div className="absolute left-0 top-1/2 -translate-y-1/2 w-2 h-2 rounded-full animate-pipeline-dot animate-pipeline-dot-delay-${i}" style={{ background: `linear-gradient(90deg, ${stage.color}, ${STAGES[i + 1].color})`, boxShadow: `0 0 8px ${stage.color}` }} />
+                  <div className="relative hidden md:flex items-center justify-center shrink-0 w-8 animate-entrance-fade-up" style={{ animationDelay: `${620 + i * 100}ms` }}>
+                    <div className="w-full h-[1px] rounded-full animate-shimmer-sweep" style={{ background: `linear-gradient(90deg, transparent 0%, ${stage.color}50 50%, transparent 100%)`, boxShadow: `0 0 10px ${stage.color}60`, backgroundSize: "200% 100%" }} />
+                    <div className="absolute left-0 top-1/2 -translate-y-1/2 w-2.5 h-2.5 rounded-full animate-pipeline-dot animate-pipeline-dot-delay-${i}" style={{ background: stage.color, boxShadow: `0 0 10px ${stage.color}` }} />
                   </div>
                 )}
               </div>

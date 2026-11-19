@@ -126,7 +126,7 @@ const badgeVariants = {
     y: 0,
     transition: {
       delay: 0.1 + custom * 0.05,
-      duration: 0.9,
+      duration: 0.6,
       ease: "easeOut" as Easing,
     },
   }),
@@ -140,7 +140,7 @@ const headlineVariants = {
     filter: "blur(0px)",
     transition: {
       delay: 0.25 + custom * 0.1,
-      duration: 1.05,
+      duration: 0.75,
       ease: "easeOut" as Easing,
     },
   }),
@@ -153,7 +153,7 @@ const subCaptionVariants = {
     y: 0,
     transition: {
       delay: 0.75,
-      duration: 0.9,
+      duration: 0.6,
       ease: "easeOut" as Easing,
     },
   },
@@ -166,7 +166,7 @@ const trustVariants = {
     y: 0,
     transition: {
       delay: 0.75 + custom * 0.05,
-      duration: 0.9,
+      duration: 0.6,
       ease: "easeOut" as Easing,
     },
   }),
@@ -177,7 +177,7 @@ const containerVariants = {
   visible: {
     opacity: 1,
     transition: {
-      staggerChildren: 0.14,
+      staggerChildren: 0.1,
       delayChildren: 0.45,
     },
   },
@@ -189,7 +189,7 @@ const bulletVariants = {
     opacity: 1,
     y: 0,
     transition: {
-      duration: 0.85,
+      duration: 0.6,
       ease: "easeOut" as Easing,
     },
   },
@@ -287,7 +287,7 @@ export default function HeroCanvas() {
               borderColor: animEnabled ? "rgba(16, 185, 129, 0.5)" : "rgba(0, 255, 135, 0.2)",
               boxShadow: animEnabled ? "0 0 24px rgba(16, 185, 129, 0.15), inset 0 1px 0 rgba(255,255,255,0.05)" : "none",
             }}
-            transition={{ duration: 0.9, ease: "easeOut" as Easing }}
+            transition={{ duration: 0.6, ease: "easeOut" as Easing }}
           >
             <span className="w-2 h-2 bg-mint rounded-full animate-pulse" />
             <span className="text-sm font-medium text-mint">AI GTM Engineer — Custom Sales & Ops Systems</span>
@@ -443,7 +443,7 @@ export default function HeroCanvas() {
               key={m.label}
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 1.2 + idx * 0.08, duration: 0.6, ease: easing as Easing }}
+              transition={{ delay: 0.8 + idx * 0.06, duration: 0.5, ease: easing as Easing }}
               className="glass rounded-2xl p-5 relative overflow-hidden hover-lift metric-card"
               style={{ border: `1px solid ${m.color}25` }}
               role="listitem"

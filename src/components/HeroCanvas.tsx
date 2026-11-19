@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState, useRef, useEffect } from "react";
+import { motion, useReducedMotion, type Easing } from "framer-motion";
 
 interface StageNode {
   id: number;
@@ -103,12 +104,119 @@ function Slider({
   );
 }
 
+const easing = "easeOut";
+
+const glowPulseVariants = {
+  initial: { opacity: 0.12, scale: 1 },
+  pulse: {
+    opacity: [0.12, 0.22, 0.12],
+    scale: [1, 1.02, 1],
+    transition: {
+      duration: 7,
+      repeat: Infinity,
+      ease: "easeInOut" as Easing,
+    },
+  },
+};
+
+const badgeVariants = {
+  hidden: { opacity: 0, y: -10 },
+  visible: (custom: number) => ({
+    opacity: 1,
+    y: 0,
+    transition: {
+      delay: 0.1 + custom * 0.05,
+      duration: 0.9,
+      ease: "easeOut" as Easing,
+    },
+  }),
+};
+
+const headlineVariants = {
+  hidden: { opacity: 0, y: 24, filter: "blur(8px)" },
+  visible: (custom: number) => ({
+    opacity: 1,
+    y: 0,
+    filter: "blur(0px)",
+    transition: {
+      delay: 0.25 + custom * 0.1,
+      duration: 1.05,
+      ease: "easeOut" as Easing,
+    },
+  }),
+};
+
+const subCaptionVariants = {
+  hidden: { opacity: 0, y: 12 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: {
+      delay: 0.75,
+      duration: 0.9,
+      ease: "easeOut" as Easing,
+    },
+  },
+};
+
+const trustVariants = {
+  hidden: { opacity: 0, y: 12 },
+  visible: (custom: number) => ({
+    opacity: 1,
+    y: 0,
+    transition: {
+      delay: 0.75 + custom * 0.05,
+      duration: 0.9,
+      ease: "easeOut" as Easing,
+    },
+  }),
+};
+
+const containerVariants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.14,
+      delayChildren: 0.45,
+    },
+  },
+};
+
+const bulletVariants = {
+  hidden: { opacity: 0, y: 16 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: {
+      duration: 0.85,
+      ease: "easeOut" as Easing,
+    },
+  },
+};
+
 export default function HeroCanvas() {
   const [mounted, setMounted] = useState(false);
   const [trafficLoad, setTrafficLoad] = useState(72);
   const [processingEfficiency, setProcessingEfficiency] = useState(88);
   const [deliverySpeed, setDeliverySpeed] = useState(79);
   const panelRef = useRef<HTMLDivElement>(null);
+
+  const reducedMotion = useReducedMotion();
+  const [animEnabled, setAnimEnabled] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+    setAnimEnabled(true);
+  }, []);
+
+  useEffect(() => {
+    if (reducedMotion) {
+      setAnimEnabled(false);
+    } else {
+      setAnimEnabled(true);
+    }
+  }, [reducedMotion]);
 
   const metrics = useMemo<Metric[]>(
     () => [
@@ -145,94 +253,215 @@ export default function HeroCanvas() {
     };
   }, [processingEfficiency, trafficLoad, deliverySpeed]);
 
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-
   return (
-    <section className="relative min-h-[90vh] flex flex-col pt-24 pb-12 overflow-hidden" aria-labelledby="hero-title">
+    <section className="relative min-h-[90vh] flex flex-col pt-28 md:pt-36 pb-12 overflow-hidden" aria-labelledby="hero-title">
       <div className="absolute inset-0" aria-hidden="true">
         <div className="absolute inset-0 bg-gradient-to-b from-transparent via-background to-background opacity-80" />
         <div className="absolute top-1/5 left-1/10 w-[500px] h-[500px] bg-red-600/5 rounded-full blur-[200px] animate-glow-pulse" style={{ animationDelay: "0s" }} />
         <div className="absolute bottom-1/5 right-1/8 w-[450px] h-[450px] bg-amber-600/5 rounded-full blur-[200px] animate-glow-pulse" style={{ animationDelay: "1.5s" }} />
+
+        {/* Ambient breathing radial glow behind headline */}
+        {!reducedMotion && (
+          <motion.div
+            className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[300px] rounded-full pointer-events-none -z-10"
+            style={{
+              background: "radial-gradient(ellipse at center, rgba(16, 185, 129, 0.18) 0%, rgba(6, 182, 212, 0.1) 40%, transparent 70%)",
+            }}
+            animate={glowPulseVariants}
+            initial="initial"
+            variants={glowPulseVariants}
+          />
+        )}
       </div>
 
       <div className="relative z-10 w-full max-w-7xl mx-auto px-6 lg:px-12 py-8 flex flex-col flex-1">
-        <div className="text-center mb-10 animate-hero-entrance-fade-up max-w-4xl mx-auto" style={{ animationDelay: "0ms" }}>
-          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full glass border-mint/20 mb-6 animate-entrance-scale-in" style={{ animationDelay: "60ms" }}>
+        <div className="text-center mb-10 max-w-4xl mx-auto">
+          {/* Step 1: Top pill badge */}
+          <motion.div
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-full glass border-mint/20 mb-6"
+            variants={badgeVariants}
+            initial="hidden"
+            animate={animEnabled ? "visible" : "hidden"}
+            custom={0}
+            style={{
+              borderColor: animEnabled ? "rgba(16, 185, 129, 0.5)" : "rgba(0, 255, 135, 0.2)",
+              boxShadow: animEnabled ? "0 0 24px rgba(16, 185, 129, 0.15), inset 0 1px 0 rgba(255,255,255,0.05)" : "none",
+            }}
+            transition={{ duration: 0.9, ease: "easeOut" as Easing }}
+          >
             <span className="w-2 h-2 bg-mint rounded-full animate-pulse" />
             <span className="text-sm font-medium text-mint">AI GTM Engineer — Custom Sales & Ops Systems</span>
-          </div>
-          <h1 id="hero-title" className="text-4xl sm:text-5xl lg:text-6xl xl:text-7xl font-bold tracking-tight leading-[1.02] text-white mb-6 max-w-[90vw] mx-auto">
-            <span className="animate-hero-entrance-fade-up" style={{ animationDelay: "100ms", animationTimingFunction: "cubic-bezier(0.16, 1, 0.3, 1)" }}>I Replace Manual Sales & Ops Work</span>
-            <br />
-            <span className="text-gradient-mint animate-gradient-shimmer animate-text-breathe-glow" style={{ animationDelay: "250ms" }}>With Custom AI Systems You Own</span>
-          </h1>
-          <div className="max-w-2xl mx-auto text-left animate-hero-entrance-fade-up" style={{ animationDelay: "400ms" }}>
-            <div className="flex flex-col gap-4">
-              <div className="flex items-start gap-3">
-                <span className="w-2.5 h-2.5 rounded-full bg-amber-400 mt-1.5 shrink-0 animate-dot-sparkle animate-dot-sparkle-delay-1" />
+          </motion.div>
+
+          {/* Step 2: Headline */}
+          <motion.h1
+            id="hero-title"
+            className="text-4xl sm:text-5xl lg:text-6xl xl:text-7xl font-bold tracking-tight leading-[1.02] text-white mb-6 max-w-[90vw] mx-auto"
+            variants={headlineVariants}
+            initial="hidden"
+            animate={animEnabled ? "visible" : "hidden"}
+          >
+            <motion.span
+              variants={headlineVariants}
+              custom={0}
+              className="block"
+            >
+              I Replace Manual Sales & Ops Work
+            </motion.span>
+            <motion.span
+              variants={headlineVariants}
+              custom={1}
+              className="text-gradient-mint block"
+              style={{
+                backgroundSize: "200% auto",
+                animation: animEnabled ? "gradient-shimmer 8s ease-in-out infinite" : "none",
+              }}
+            >
+              With Custom AI Systems You Own
+            </motion.span>
+          </motion.h1>
+
+          {/* Steps 3 & 4: Bullets, sub-caption, trust indicators */}
+          <motion.div
+            className="max-w-2xl mx-auto text-left"
+            variants={containerVariants}
+            initial="hidden"
+            animate={animEnabled ? "visible" : "hidden"}
+          >
+            {/* Step 3: Value-proposition bullets */}
+            <motion.div
+              className="flex flex-col gap-4 mb-4"
+              variants={bulletVariants}
+            >
+              <motion.div
+                className="flex items-start gap-3"
+                variants={bulletVariants}
+                custom={0}
+              >
+                <motion.span
+                  className="w-2.5 h-2.5 rounded-full bg-amber-400 mt-1.5 shrink-0"
+                  animate={animEnabled ? { opacity: [0.7, 1, 0.7], scale: [1, 1.1, 1] } : {}}
+                  transition={{ duration: 2.5, repeat: Infinity, ease: "easeInOut" as Easing }}
+                  style={{ animationDelay: "0.45s" }}
+                />
                 <div>
                   <span className="font-bold text-white">Inbound:</span>
                   <span className="text-white/90 ml-1">Clean, score, and route incoming leads to your CRM and Slack in under 30 seconds.</span>
                 </div>
-              </div>
-              <div className="flex items-start gap-3">
-                <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 mt-1.5 shrink-0 animate-dot-sparkle animate-dot-sparkle-delay-2" />
+              </motion.div>
+
+              <motion.div
+                className="flex items-start gap-3"
+                variants={bulletVariants}
+                custom={1}
+              >
+                <motion.span
+                  className="w-2.5 h-2.5 rounded-full bg-emerald-400 mt-1.5 shrink-0"
+                  animate={animEnabled ? { opacity: [0.7, 1, 0.7], scale: [1, 1.1, 1] } : {}}
+                  transition={{ duration: 2.5, repeat: Infinity, ease: "easeInOut" as Easing }}
+                  style={{ animationDelay: "0.55s" }}
+                />
                 <div>
                   <span className="font-bold text-white">Outbound:</span>
                   <span className="text-white/90 ml-1">Turn raw company data into verified, outreach-ready prospects in seconds instead of hours.</span>
                 </div>
-              </div>
-              <div className="flex items-start gap-3">
-                <span className="w-2.5 h-2.5 rounded-full bg-violet-400 mt-1.5 shrink-0 animate-dot-sparkle animate-dot-sparkle-delay-3" />
+              </motion.div>
+
+              <motion.div
+                className="flex items-start gap-3"
+                variants={bulletVariants}
+                custom={2}
+              >
+                <motion.span
+                  className="w-2.5 h-2.5 rounded-full bg-violet-400 mt-1.5 shrink-0"
+                  animate={animEnabled ? { opacity: [0.7, 1, 0.7], scale: [1, 1.1, 1] } : {}}
+                  transition={{ duration: 2.5, repeat: Infinity, ease: "easeInOut" as Easing }}
+                  style={{ animationDelay: "0.65s" }}
+                />
                 <div>
                   <span className="font-bold text-white">Infrastructure:</span>
                   <span className="text-white/90 ml-1">Production-grade n8n, Supabase & Docker pipelines with instant Slack & Telegram error alerts.</span>
                 </div>
-              </div>
-            </div>
-            <p className="text-sm text-muted/60 mt-4 max-w-xl mx-auto animate-hero-entrance-fade-up" style={{ animationDelay: "500ms" }}>
+              </motion.div>
+            </motion.div>
+
+            {/* Step 4: Sub-caption */}
+            <motion.p
+              className="text-sm text-muted/60 mt-4 max-w-xl mx-auto"
+              variants={subCaptionVariants}
+              initial="hidden"
+              animate={animEnabled ? "visible" : "hidden"}
+            >
               *Self-hosted on your cloud — you own the data, the infra, the uptime. No vendor lock-in.
-            </p>
-            <div className="flex items-center justify-center gap-6 mt-4 text-sm animate-hero-entrance-fade-up" style={{ animationDelay: "550ms" }}>
-              <span className="flex items-center gap-1.5 text-white/80 hover-lift" style={{ animationDelay: "540ms" }}>
+            </motion.p>
+
+            {/* Trust indicators */}
+            <motion.div
+              className="flex items-center justify-center gap-6 mt-4 text-sm"
+              variants={containerVariants}
+              initial="hidden"
+              animate={animEnabled ? "visible" : "hidden"}
+            >
+              <motion.span
+                className="flex items-center gap-1.5 text-white/80 hover-lift"
+                variants={trustVariants}
+                custom={0}
+                initial="hidden"
+                animate={animEnabled ? "visible" : "hidden"}
+              >
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
                 US timezone overlap & async delivery
-              </span>
-              <span className="flex items-center gap-1.5 text-white/80 hover-lift" style={{ animationDelay: "600ms" }}>
+              </motion.span>
+              <motion.span
+                className="flex items-center gap-1.5 text-white/80 hover-lift"
+                variants={trustVariants}
+                custom={1}
+                initial="hidden"
+                animate={animEnabled ? "visible" : "hidden"}
+              >
                 <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
                 ZOD / PYDANTIC GATES
-              </span>
-              <span className="flex items-center justify-center gap-1.5 text-white/80 hover-lift" style={{ animationDelay: "660ms" }}>
+              </motion.span>
+              <motion.span
+                className="flex items-center justify-center gap-1.5 text-white/80 hover-lift"
+                variants={trustVariants}
+                custom={2}
+                initial="hidden"
+                animate={animEnabled ? "visible" : "hidden"}
+              >
                 <span className="w-1.5 h-1.5 rounded-full bg-violet-400" />
                 HUMAN-IN-THE-LOOP
-              </span>
-            </div>
-          </div>
+              </motion.span>
+            </motion.div>
+          </motion.div>
         </div>
 
+        {/* Metrics Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8" role="list">
           {metrics.map((m, idx) => (
-            <div
+            <motion.div
               key={m.label}
-              className="glass rounded-2xl p-5 relative overflow-hidden hover-lift metric-card" 
-              style={{ border: `1px solid ${m.color}25`, transitionDelay: `${idx * 80}ms` }}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 1.2 + idx * 0.08, duration: 0.6, ease: easing as Easing }}
+              className="glass rounded-2xl p-5 relative overflow-hidden hover-lift metric-card"
+              style={{ border: `1px solid ${m.color}25` }}
               role="listitem"
             >
               <div className="absolute top-0 right-0 w-24 h-24 rounded-full blur-xl opacity-20 animate-float-gentle" style={{ background: m.color, animationDelay: `${idx * 200}ms` }} />
               <div className="relative z-10">
-                <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-wider mb-2 animate-entrance-slide-left" style={{ color: m.color, animationDelay: `${idx * 80 + 100}ms` }}>
+                <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-wider mb-2">
                   <span className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ background: m.color }} />
                   {m.label}
                 </div>
-                <div className="text-3xl lg:text-4xl font-bold text-white font-mono animate-entrance-scale-in" style={{ animationDelay: `${idx * 80 + 160}ms` }}>{m.value}</div>
-                <div className="text-xs text-muted mt-1 animate-entrance-fade-up" style={{ animationDelay: `${idx * 80 + 220}ms` }}>{m.unit}</div>
+                <div className="text-3xl lg:text-4xl font-bold text-white font-mono">{m.value}</div>
+                <div className="text-xs text-muted mt-1">{m.unit}</div>
               </div>
-            </div>
+            </motion.div>
           ))}
         </div>
 
+        {/* Pipeline Panel */}
         <div ref={panelRef} className="relative glass rounded-2xl p-5 lg:p-8 border border-white/10 mb-8 overflow-hidden hover-lift" style={{ transitionDelay: "400ms" }}>
           {/* Ambient panel glow */}
           <div className="absolute inset-0 -z-10 opacity-30" style={{ background: `radial-gradient(circle at 20% 30%, ${STAGES[0].color}25 0%, transparent 50%)` }} />
@@ -294,6 +523,7 @@ export default function HeroCanvas() {
           </div>
         </div>
 
+        {/* Pipeline Control Dashboard */}
         <div className="glass rounded-2xl p-6 lg:p-8 border border-white/10 mb-8 hover-lift" style={{ transitionDelay: "900ms" }}>
           <div className="flex items-center justify-between mb-6">
             <h3 className="text-lg lg:text-xl font-bold text-white animate-entrance-slide-left">Pipeline Control Dashboard</h3>
@@ -305,6 +535,7 @@ export default function HeroCanvas() {
           </div>
         </div>
 
+        {/* Status Panel */}
         <div className={`rounded-2xl p-4 lg:p-6 mb-8 flex items-start gap-3 overflow-hidden hover-lift ${status.className}`} role="status" style={{ transitionDelay: "1000ms" }}>
           <div className="flex-shrink-0 w-10 h-10 rounded-xl flex items-center justify-center text-xl bg-white/5 animate-entrance-scale-in">
             {status.icon}
@@ -315,6 +546,7 @@ export default function HeroCanvas() {
           </div>
         </div>
 
+        {/* CTAs */}
         <div className="flex flex-col sm:flex-row items-center justify-center gap-3 mb-6 animate-entrance-fade-up" style={{ animationDelay: "1100ms" }}>
           <a href="https://calendly.com/kchanchan2357/30min" target="_blank" rel="noopener noreferrer" className="btn-primary focus-ring group btn-magnetic cta-primary-glow">
             <span className="relative z-10">Book a 15-min Discovery Call</span>

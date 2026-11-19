@@ -112,10 +112,10 @@ export default function HeroCanvas() {
 
   const metrics = useMemo<Metric[]>(
     () => [
-      { label: "Inbound Signals", value: "1.2k", unit: "/mo", color: "#fbbf24" },
-      { label: "Enriched Leads", value: "850+", unit: "/mo", color: "#ff6b5e" },
-      { label: "Outbound Sent", value: "500+", unit: "/mo", color: "#dc2626" },
-      { label: "Hours Saved", value: "1,200+", unit: "/yr", color: "#10b981" },
+      { label: "SELF-HOSTED OCI VPS", value: "✓", unit: "INFRA", color: "#fbbf24" },
+      { label: "SUPABASE DLQ & RETRIES", value: "✓", unit: "RELIABILITY", color: "#ff6b5e" },
+      { label: "ZOD / PYDANTIC GATES", value: "✓", unit: "VALIDATION", color: "#dc2626" },
+      { label: "HUMAN-IN-THE-LOOP", value: "✓", unit: "GOVERNANCE", color: "#10b981" },
     ],
     []
   );
@@ -202,11 +202,11 @@ export default function HeroCanvas() {
               </span>
               <span className="flex items-center gap-1.5 text-white/80 hover-lift" style={{ animationDelay: "600ms" }}>
                 <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
-                1,200+ hrs saved/yr
+                ZOD / PYDANTIC GATES
               </span>
               <span className="flex items-center justify-center gap-1.5 text-white/80 hover-lift" style={{ animationDelay: "660ms" }}>
                 <span className="w-1.5 h-1.5 rounded-full bg-violet-400" />
-                Deployed, monitored, owned
+                HUMAN-IN-THE-LOOP
               </span>
             </div>
           </div>

@@ -22,9 +22,9 @@ const caseStudies: CaseStudy[] = [
     id: "case-1",
     title: "Lead Sanitization & Scoring",
     industry: "RevOps / SaaS",
-    outcome: "Reduced manual data cleanup from 2 hours to 5 minutes per lead",
-    metric: "96% time reduction",
-    metricValue: "2h → 5min",
+    outcome: "Modeled Benchmark: Replaces repetitive manual CRM cleanup with automated ingestion, bot filtering, and idempotent HubSpot routing.",
+    metric: "Automated E.164 normalization & Zod validation",
+    metricValue: "Sub-30s Execution",
     description: "Built an end-to-end inbound lead pipeline that captures every submission, normalizes phone numbers to E.164, filters bots with behavioral analysis, scores lead quality with AI, and pushes only clean, qualified records into HubSpot automatically with idempotency keys.",
     technologies: ["n8n", "Supabase", "Gemini", "HubSpot", "Zod"],
     systemId: "01",
@@ -35,9 +35,9 @@ const caseStudies: CaseStudy[] = [
     id: "case-2",
     title: "E-Commerce Revenue Recovery",
     industry: "E-Commerce / DTC",
-    outcome: "Recovered $50K+ ARR from abandoned carts in first quarter",
-    metric: "23% recovery rate",
-    metricValue: "$50K ARR",
+    outcome: "Modeled Benchmark: Tracks abandoned checkouts with timed delay gates and Supabase purchase checks before sending personalized follow-ups.",
+    metric: "Stateful purchase verification",
+    metricValue: "Zero Duplicate Nudges",
     description: "Implemented a Make-based automation with stateful delay gates that tracks cart abandonment, applies smart delays, verifies purchase status before each follow-up, generates AI-written recovery emails, and sends via Gmail only when the customer hasn't purchased. Zero duplicate nudges to converted customers.",
     technologies: ["Make", "Supabase", "Gemini", "Gmail", "Stateful Delays"],
     systemId: "09",
@@ -48,8 +48,8 @@ const caseStudies: CaseStudy[] = [
     id: "case-3",
     title: "B2B Outbound at Scale",
     industry: "B2B Sales / Agency",
-    outcome: "3x qualified pipeline increase with 40% less rep research time",
-    metric: "3x pipeline growth",
+    outcome: "Modeled Benchmark: Automates company discovery, scraping, AI personalization, and Slack human-approval gates before rate-limited dispatch.",
+    metric: "Automated prospect research",
     metricValue: "15min → 30sec",
     description: "Deployed an autonomous outbound system that discovers target companies via Apify, scrapes intelligence, writes hyper-personalized outreach emails with AI, routes for human approval via Slack, and dispatches with rate limiting. Research time dropped from 15 minutes to under 30 seconds per prospect. Full compliance logging included.",
     technologies: ["Apify", "Gemini", "Gmail", "Slack", "n8n"],
@@ -100,7 +100,7 @@ export default function CaseStudiesSection() {
             <span className="text-gradient-cyan">Business Impact</span>
           </h2>
           <p className="text-lg sm:text-xl text-muted max-w-2xl mx-auto leading-relaxed">
-            Real outcomes from production automations. Each case study links to the full system breakdown in the Working Systems section.
+            Modeled impact scenarios and tested pipeline benchmarks from end-to-end system builds.
           </p>
         </div>
 
@@ -108,12 +108,12 @@ export default function CaseStudiesSection() {
           {caseStudies.map((study, index) => {
             const staggerDelay = index * 0.08;
             return (
-              <article
+<article
                 key={study.id}
                 role="listitem"
-                className={`relative rounded-2xl p-5 lg:p-6 overflow-hidden transition-all duration-500 ease-out ${
+                className={`relative rounded-2xl p-5 lg:p-6 overflow-hidden transition-all duration-300 ease-out ${
                   isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-20"
-                }`}
+                } group hover:scale-[1.02] hover:-translate-y-1.5 hover:border-emerald-400/50 hover:shadow-[0_0_30px_-5px_rgba(16,185,129,0.2)]`}
                 style={{
                   transitionDelay: `${index * 80}ms`,
                   transitionDuration: '500ms',
@@ -123,6 +123,8 @@ export default function CaseStudiesSection() {
                   boxShadow: `0 0 20px ${study.color}10, inset 0 1px 0 rgba(255,255,255,0.06)`,
                 }}
               >
+                {/* Radial spotlight sheen on hover */}
+                <div className="absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" style={{ background: `radial-gradient(circle at var(--mouse-x, 50%) var(--mouse-y, 50%), ${study.color}20, transparent 70%)` }} aria-hidden="true" />
                 {/* Top accent bar */}
                 <div
                   className="absolute top-0 left-0 right-0 h-1"
@@ -160,7 +162,7 @@ export default function CaseStudiesSection() {
                       <div className="text-right">
                         <div className="flex items-center gap-1.5 text-white/80 text-sm">
                           <BarChart2 className="w-4 h-4" style={{ color: study.color }} aria-hidden="true" />
-                          <span>Verified Outcome</span>
+                          <span>Modeled Benchmark</span>
                         </div>
                       </div>
                     </div>

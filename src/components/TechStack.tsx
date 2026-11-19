@@ -42,11 +42,11 @@ const techStack = [
   // Programming & Frontend
   { name: "Python", category: "Programming & Frontend", color: "#3776AB", icon: "python" },
   { name: "TypeScript", category: "Programming & Frontend", color: "#3178C6", icon: "typescript" },
+  { name: "JavaScript (ES6+)", category: "Programming & Frontend", color: "#F7DF1E", icon: "javascript" },
   { name: "React / Next.js", category: "Programming & Frontend", color: "#61DAFB", icon: "react" },
 
   // CRM & Business Systems
   { name: "HubSpot CRM", category: "CRM & Business Systems", color: "#FF7A59", icon: "hubspot" },
-  { name: "GoHighLevel", category: "CRM & Business Systems", color: "#1A1A2E", icon: "gohighlevel" },
   { name: "QuickBooks", category: "CRM & Business Systems", color: "#0077C5", icon: "quickbooks" },
 ];
 
@@ -101,8 +101,7 @@ function TechIcon({ name, color }: { name: string; color: string }) {
     typescript: <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z"/><text x="12" y="16" fontSize="8" textAnchor="middle" fill="currentColor">TS</text></svg>,
     react: <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z"/><circle cx="12" cy="12" r="4" stroke="currentColor" strokeWidth="2" fill="none"/><circle cx="12" cy="12" r="2" fill="currentColor"/></svg>,
     hubspot: <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z"/><path d="M12 8l4 4-4 4M8 12h8"/></svg>,
-    gohighlevel: <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z"/><path d="M8 14l4-4 4 4M8 10l4 4 4-4"/></svg>,
-    quickbooks: <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z"/></svg>,
+    javascript: <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>,
   };
 
   const Icon = icons[name] || <span className="text-xs font-bold">{name.slice(0,2)}</span>;
@@ -168,7 +167,7 @@ export default function TechStack() {
             <span className="text-gradient-cyan">Engineering Stack</span>
           </h2>
           <p className="text-lg sm:text-xl text-muted max-w-2xl mx-auto leading-relaxed">
-            Every tool here runs in production — self-hosted on OCI, zero shared tenancy. No tutorials, no hello-worlds. Systems processing millions of records daily with 99.9% uptime.
+            Self-hosted on Oracle Cloud Infrastructure (OCI) with Docker, Caddy, and Tailscale. Built for validation, fault tolerance, and observable recovery—no black-box templates.
           </p>
         </div>
 

@@ -16,7 +16,7 @@ const skills: Skill[] = [
   {
     name: "n8n",
     category: "Automation",
-    level: "expert",
+    level: "advanced",
     years: 3,
     description: "Enterprise workflow automation with custom nodes, error handling, and MCP integration",
     relatedTools: ["Custom Nodes", "MCP", "Webhooks"],
@@ -42,15 +42,23 @@ const skills: Skill[] = [
   {
     name: "TypeScript",
     category: "Frontend",
-    level: "expert",
+    level: "intermediate",
     years: 5,
     description: "Strict typing, generics, and advanced type patterns for maintainable code",
     relatedTools: ["React", "Next.js", "Zod"],
   },
   {
+    name: "JavaScript (ES6+)",
+    category: "Frontend",
+    level: "advanced",
+    years: 5,
+    description: "Modern JS with modules, async/await, destructuring, and functional patterns",
+    relatedTools: ["TypeScript", "React", "Node.js"],
+  },
+  {
     name: "React",
     category: "Frontend",
-    level: "expert",
+    level: "advanced",
     years: 5,
     description: "Hooks, context, suspense, and server components for modern UIs",
     relatedTools: ["Next.js", "Tailwind", "Framer Motion"],
@@ -58,7 +66,7 @@ const skills: Skill[] = [
   {
     name: "Next.js",
     category: "Frontend",
-    level: "expert",
+    level: "advanced",
     years: 4,
     description: "App Router, Server Components, and static generation for performance",
     relatedTools: ["React", "Vercel", "Turbopack"],
@@ -66,7 +74,7 @@ const skills: Skill[] = [
   {
     name: "Tailwind CSS",
     category: "Frontend",
-    level: "expert",
+    level: "advanced",
     years: 4,
     description: "Utility-first styling with dark mode, animations, and responsive design",
     relatedTools: ["CSS Variables", "JIT", "Plugins"],
@@ -118,7 +126,7 @@ const skills: Skill[] = [
   {
     name: "Supabase (PostgreSQL)",
     category: "Database",
-    level: "expert",
+    level: "advanced",
     years: 3,
     description: "PostgreSQL with realtime, auth, edge functions, and row-level security",
     relatedTools: ["Realtime", "Edge Functions", "RLS"],
@@ -144,7 +152,7 @@ const skills: Skill[] = [
   {
     name: "Vercel",
     category: "DevOps",
-    level: "expert",
+    level: "advanced",
     years: 3,
     description: "Edge deployment, analytics, preview deployments, and cron jobs",
     relatedTools: ["Edge", "Analytics", "Cron"],
@@ -176,9 +184,9 @@ const categoryColors = {
 };
 
 const levelStyles = {
-  expert: { label: "Expert", color: "#00ff87", bg: "rgba(0, 255, 135, 0.15)" },
-  advanced: { label: "Advanced", color: "#06b6d4", bg: "rgba(6, 182, 212, 0.15)" },
-  intermediate: { label: "Intermediate", color: "#f59e0b", bg: "rgba(245, 158, 11, 0.15)" },
+  expert: { label: "PRODUCTION-TESTED", color: "#00ff87", bg: "rgba(0, 255, 135, 0.15)" },
+  advanced: { label: "ADVANCED", color: "#06b6d4", bg: "rgba(6, 182, 212, 0.15)" },
+  intermediate: { label: "WORKING KNOWLEDGE", color: "#f59e0b", bg: "rgba(245, 158, 11, 0.15)" },
 };
 
 export default function SkillsTagCloud() {
@@ -339,9 +347,9 @@ export default function SkillsTagCloud() {
           <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
             {[
               { label: "Total Skills", value: skills.length },
-              { label: "Expert Level", value: skills.filter(s => s.level === "expert").length },
+              { label: "Advanced Level", value: skills.filter(s => s.level === "advanced").length },
               { label: "Categories", value: 5 },
-              { label: "Years Exp (Avg)", value: Math.round(skills.reduce((a, b) => a + b.years, 0) / skills.length) },
+              { label: "10+ Built Systems", value: Math.round(skills.reduce((a, b) => a + b.years, 0) / skills.length) * 2 },
               { label: "Automation Focus", value: skills.filter(s => s.category === "Automation").length },
             ].map((stat, i) => (
               <div key={stat.label} className="text-center p-4 rounded-xl glass border-white/5 hover:border-mint/20 transition-all duration-500">
